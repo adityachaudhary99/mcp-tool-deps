@@ -79,7 +79,7 @@
         padding: 28px 44px 22px;
         border-bottom: 1px solid var(--rule-strong);
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: 1fr auto auto;
         align-items: end;
         gap: 32px;
         background: var(--paper);
@@ -133,6 +133,62 @@
       .h-meta b {
         color: var(--ink);
         font-weight: 600;
+      }
+
+      /* ── find / gazetteer ───────────────── */
+      .find-wrap {
+        align-self: end;
+        display: grid;
+        gap: 6px;
+        justify-items: end;
+      }
+      .find-label {
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--ink-faded);
+      }
+      .find-input {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--ink);
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid var(--rule-strong);
+        padding: 4px 26px 4px 4px;
+        width: 200px;
+        outline: none;
+        transition: border-color 160ms ease;
+      }
+      .find-input::placeholder { color: var(--ink-faded); font-style: italic; }
+      .find-input:focus { border-bottom-color: var(--vermilion); }
+      .find-shell {
+        position: relative;
+      }
+      .find-key {
+        position: absolute;
+        right: 4px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--ink-faded);
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        padding: 1px 4px;
+        pointer-events: none;
+        transition: opacity 160ms ease;
+      }
+      .find-input:focus + .find-key { opacity: 0; }
+      .find-count {
+        font-family: var(--mono);
+        font-size: 9.5px;
+        color: var(--vermilion);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        min-height: 1em;
       }
 
       /* ── main split ─────────────────────────── */
@@ -202,6 +258,32 @@
         z-index: 3;
       }
 
+      /* ── region annotations ──────────────── */
+      .region rect {
+        fill: var(--paper-shade);
+        fill-opacity: 0.55;
+        stroke: var(--rule-strong);
+        stroke-width: 1;
+        stroke-dasharray: 4 3;
+      }
+      .region text {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        fill: var(--ink-faded);
+        pointer-events: none;
+      }
+      .region .region-num {
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 500;
+        letter-spacing: 0.22em;
+        fill: var(--vermilion);
+      }
+      .region.dim rect { fill-opacity: 0.25; }
+
       /* ── SVG node + edge styles ─────────────── */
       .node rect {
         fill: var(--paper);
@@ -219,28 +301,110 @@
       }
       .node:hover rect { fill: var(--paper-shade); }
       .node.dim { opacity: 0.22; }
+      .node.faded { opacity: 0.32; }
       .node.selected rect { fill: var(--ink); }
       .node.selected text { fill: var(--paper); }
+      .node.find-hit rect { stroke: var(--vermilion); stroke-width: 2.2; }
       .node[data-toolkit="filesystem"] rect { stroke: var(--c-filesystem); }
       .node[data-toolkit="fetch"] rect       { stroke: var(--c-fetch); }
       .node[data-toolkit="github"] rect      { stroke: var(--c-github); }
+      .node[data-weight="hub"] rect { stroke-width: 2.4; }
+      .node[data-weight="hub"] text { font-weight: 600; font-size: 11.5px; }
+      .node[data-weight="leaf"] text { font-size: 9.5px; font-weight: 400; }
 
       .edge path {
         fill: none;
         stroke: var(--ink-muted);
         stroke-width: 1.3;
-        opacity: 0.7;
         transition: opacity 160ms ease, stroke-width 160ms ease;
       }
       .edge.semantic path { stroke: var(--vermilion); stroke-dasharray: 4 3; }
       .edge.direct path   { stroke: var(--ink); }
+      .edge[data-confidence="high"]   path { opacity: 0.82; }
+      .edge[data-confidence="medium"] path { opacity: 0.55; }
+      .edge[data-confidence="low"]    path { opacity: 0.32; }
+      .edge:not([data-confidence])    path { opacity: 0.7; }
       .edge:hover path,
-      .edge.highlighted path { opacity: 1; stroke-width: 2; }
-      .edge.dim path { opacity: 0.12; }
-      .edge.selected path { opacity: 1; stroke-width: 2.5; }
+      .edge.highlighted path { opacity: 1 !important; stroke-width: 2; animation: edgePulse 280ms ease-out; }
+      .edge.dim path { opacity: 0.08 !important; }
+      .edge.selected path { opacity: 1 !important; stroke-width: 2.5; }
+      .edge.hero-pulse path { animation: heroPulse 1800ms ease-out 800ms 2; }
+
+      @keyframes edgePulse {
+        0%   { stroke-width: 1.3; }
+        45%  { stroke-width: 2.6; }
+        100% { stroke-width: 2; }
+      }
+      @keyframes heroPulse {
+        0%, 100% { stroke-width: 1.3; opacity: 0.7; }
+        50%      { stroke-width: 3.2; opacity: 1; }
+      }
 
       .arrow-direct   { fill: var(--ink); }
       .arrow-semantic { fill: var(--vermilion); }
+
+      /* edge midpoint reading-direction marker */
+      .edge-dir {
+        font-family: var(--mono);
+        font-size: 8.5px;
+        font-weight: 600;
+        fill: var(--vermilion);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 200ms ease;
+      }
+      .edge.highlighted .edge-dir,
+      .edge.selected    .edge-dir { opacity: 0.9; }
+      .edge.direct .edge-dir { fill: var(--ink); }
+
+      /* click ripple */
+      .ripple {
+        fill: none;
+        stroke: var(--vermilion);
+        stroke-width: 1.5;
+        pointer-events: none;
+        animation: ripple 480ms ease-out forwards;
+      }
+      @keyframes ripple {
+        0%   { r: 12; opacity: 0.9; }
+        100% { r: 36; opacity: 0; }
+      }
+
+      /* ── mini-map ────────────────────────── */
+      #minimap {
+        position: absolute;
+        bottom: 36px;
+        right: 28px;
+        width: 200px;
+        height: 130px;
+        background: var(--paper);
+        border: 1px solid var(--rule-strong);
+        box-shadow: 0 1px 0 rgba(26,22,18,0.04);
+        z-index: 3;
+        overflow: hidden;
+      }
+      #minimap-svg { width: 100%; height: 100%; display: block; cursor: crosshair; }
+      #minimap .mm-node { fill: var(--ink-faded); }
+      #minimap .mm-node[data-toolkit="filesystem"] { fill: var(--c-filesystem); }
+      #minimap .mm-node[data-toolkit="fetch"]       { fill: var(--c-fetch); }
+      #minimap .mm-node[data-toolkit="github"]      { fill: var(--c-github); }
+      #minimap .mm-edge { stroke: var(--vermilion); stroke-width: 0.4; opacity: 0.35; fill: none; }
+      #minimap-viewport {
+        fill: rgba(168, 66, 30, 0.08);
+        stroke: var(--vermilion);
+        stroke-width: 1;
+        pointer-events: none;
+      }
+      .mm-caption {
+        position: absolute;
+        bottom: -16px;
+        right: 0;
+        font-family: var(--mono);
+        font-size: 8.5px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--ink-faded);
+      }
 
       /* ── panel ─────────────────────────── */
       aside {
@@ -252,6 +416,21 @@
       }
       aside::-webkit-scrollbar { width: 6px; }
       aside::-webkit-scrollbar-thumb { background: var(--rule-strong); border-radius: 3px; }
+
+      /* scroll affordance — hairline rule fades in when content overflows */
+      aside::before, aside::after {
+        content: '';
+        position: sticky;
+        display: block;
+        height: 1px;
+        background: var(--rule-strong);
+        opacity: 0;
+        transition: opacity 200ms ease;
+      }
+      aside::before { top: 0; }
+      aside::after  { bottom: 0; }
+      aside.scroll-top::before    { opacity: 1; }
+      aside.scroll-bottom::after  { opacity: 1; }
 
       .panel-h {
         font-family: var(--mono);
@@ -326,15 +505,85 @@
       }
       .dot-sample.user { background: var(--vermilion); border-color: var(--vermilion); }
 
-      /* selection panel */
-      .sel-empty {
+      /* hero card — always-meaningful empty state */
+      .hero-card {
+        padding: 18px 18px 16px;
+        border: 1px solid var(--rule-strong);
+        background:
+          linear-gradient(var(--rule) 1px, transparent 1px) 0 0 / 18px 18px,
+          var(--paper-shade);
+        position: relative;
+      }
+      .hero-card::before {
+        content: '';
+        position: absolute;
+        top: -1px; left: -1px;
+        width: 14px; height: 14px;
+        border-top: 2px solid var(--vermilion);
+        border-left: 2px solid var(--vermilion);
+      }
+      .hero-card .hc-kicker {
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--vermilion);
+        margin-bottom: 10px;
+      }
+      .hero-card .hc-chain {
+        font-family: var(--mono);
+        font-size: 11.5px;
+        line-height: 1.7;
+        color: var(--ink);
+        word-break: break-word;
+      }
+      .hero-card .hc-chain b { font-weight: 600; }
+      .hero-card .hc-arrow {
+        display: inline-block;
+        color: var(--vermilion);
+        font-weight: 600;
+        margin: 0 4px;
+      }
+      .hero-card .hc-via {
+        color: var(--vermilion);
+        font-weight: 600;
+      }
+      .hero-card .hc-reason {
         font-family: var(--serif);
         font-style: italic;
-        font-size: 14px;
-        color: var(--ink-faded);
-        line-height: 1.6;
-        padding: 8px 0;
+        font-size: 13px;
+        color: var(--ink-muted);
+        line-height: 1.55;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px dotted var(--rule);
       }
+      .hero-card .hc-cta {
+        margin-top: 14px;
+        display: inline-block;
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--ink);
+        border-bottom: 1px solid var(--vermilion);
+        padding-bottom: 2px;
+        cursor: pointer;
+        transition: color 160ms ease;
+      }
+      .hero-card .hc-cta:hover { color: var(--vermilion); }
+      .hero-prompt {
+        font-family: var(--serif);
+        font-style: italic;
+        font-size: 13px;
+        color: var(--ink-faded);
+        line-height: 1.55;
+        margin-top: 14px;
+      }
+
+      /* selection panel */
       .sel-server {
         display: inline-block;
         font-family: var(--mono);
@@ -499,8 +748,24 @@
       header { animation-delay: 60ms; }
       aside  { animation-delay: 240ms; }
       footer { animation-delay: 360ms; }
-      .node, .edge { opacity: 0; animation: fadeIn 480ms ease forwards; }
+      .node, .edge, .region { opacity: 0; animation: fadeIn 480ms ease forwards; }
+      .region { animation-delay: 160ms; }
       @keyframes fadeIn { to { opacity: 1; } }
+
+      /* ── print ───────────────────────────── */
+      @media print {
+        body { background: white; overflow: visible; }
+        body::before { display: none; }
+        header { border-bottom: 1px solid #333; }
+        aside, footer, .find-wrap, #minimap, .stage-hint, .corner { display: none !important; }
+        main { grid-template-columns: 1fr; }
+        #stage { background: white; height: 80vh; }
+        #stage::after { display: none; }
+        .node rect { fill: white; stroke: #222; }
+        .edge path { opacity: 0.7 !important; stroke: #333 !important; }
+        .edge.semantic path { stroke: #6a2e15 !important; }
+        .region rect { fill: rgba(0,0,0,0.03); stroke: rgba(0,0,0,0.4); }
+      }
     </style>
   </head>
   <body>
@@ -514,6 +779,14 @@
             charted across <b id="srv-count">3</b> servers,
             edges drawn by name-match heuristic and an LLM reasoner.
           </div>
+        </div>
+        <div class="find-wrap">
+          <div class="find-label">Gazetteer</div>
+          <div class="find-shell">
+            <input id="find-input" class="find-input" type="text" placeholder="find a tool…" autocomplete="off" spellcheck="false" />
+            <span class="find-key">/</span>
+          </div>
+          <div class="find-count" id="find-count">&nbsp;</div>
         </div>
         <div class="h-meta">
           <div>Compiled <b id="meta-date">2026·05·22</b></div>
@@ -529,7 +802,7 @@
           <span class="corner tr"></span>
           <span class="corner bl"></span>
           <span class="corner br"></span>
-          <span class="stage-hint">Drag · scroll to zoom · click any node or edge</span>
+          <span class="stage-hint">Drag · scroll to zoom · hover a node · click for detail</span>
           <span class="stage-label">fig. 1 — dependency atlas</span>
           <svg id="graph" preserveAspectRatio="xMidYMid meet">
             <defs>
@@ -541,10 +814,19 @@
               </marker>
             </defs>
             <g id="viewport">
+              <g id="regions-layer"></g>
               <g id="edges-layer"></g>
               <g id="nodes-layer"></g>
+              <g id="overlay-layer"></g>
             </g>
           </svg>
+          <div id="minimap">
+            <svg id="minimap-svg" preserveAspectRatio="xMidYMid meet">
+              <g id="minimap-content"></g>
+              <rect id="minimap-viewport" />
+            </svg>
+            <span class="mm-caption">inset · the whole map</span>
+          </div>
         </div>
 
         <aside id="panel">
@@ -575,7 +857,7 @@
 
           <section class="panel-section">
             <div class="panel-h">Selection</div>
-            <div id="sel"><div class="sel-empty">Click a node to inspect a tool's required parameters and the producers that may supply them. Click an edge to see why it was inferred.</div></div>
+            <div id="sel"></div>
           </section>
         </aside>
       </main>
@@ -594,6 +876,42 @@
       const toolkitCounts = Object.fromEntries(toolkits.map(t => [t, G.nodes.filter(n => n.toolkit === t).length]));
 
       const labelOf = id => id.includes('::') ? id.split('::').slice(1).join('::') : id;
+
+      // degree (in + out) per node — drives visual weight
+      const degree = new Map(G.nodes.map(n => [n.id, 0]));
+      G.edges.forEach(e => {
+        degree.set(e.from, (degree.get(e.from) || 0) + 1);
+        degree.set(e.to,   (degree.get(e.to)   || 0) + 1);
+      });
+      const maxDeg = Math.max(...degree.values(), 1);
+      function weightClass(nid) {
+        const d = degree.get(nid) || 0;
+        if (d >= maxDeg * 0.55) return 'hub';
+        if (d <= 1) return 'leaf';
+        return 'mid';
+      }
+      function sizeMultiplier(nid) {
+        const d = degree.get(nid) || 0;
+        return 0.78 + Math.min(1, d / maxDeg) * 0.55;  // 0.78x to 1.33x
+      }
+
+      // ── regions (curatorial groupings) ────────────────
+      // Map each node id to a region — cartographic "districts" in the atlas
+      const REGIONS = [
+        { key: 'fs-write',  label: 'WRITE FILES',         num: 'I',   test: id => /^filesystem::(write|edit|move|create_directory)/.test(id) },
+        { key: 'fs-read',   label: 'READ FILES',          num: 'II',  test: id => /^filesystem::(read_|read$)/.test(id) },
+        { key: 'fs-disco',  label: 'DISCOVER FILES',      num: 'III', test: id => /^filesystem::(list|directory_tree|search_files|get_file_info|list_allowed)/.test(id) },
+        { key: 'fetch',     label: 'WEB FETCH',           num: 'IV',  test: id => /^fetch::/.test(id) },
+        { key: 'gh-disco',  label: 'DISCOVERY',           num: 'V',   test: id => /^github::(search_|get_a_user|fork_repository|list_commits)/.test(id) },
+        { key: 'gh-pr',     label: 'PULL REQUEST FLOW',   num: 'VI',  test: id => /^github::(.*pull_request.*|merge_pull_request)/.test(id) },
+        { key: 'gh-issue',  label: 'ISSUE FLOW',          num: 'VII', test: id => /^github::(.*issue.*|add_issue_comment)/.test(id) },
+        { key: 'gh-repo',   label: 'REPO & FILES',        num: 'VIII',test: id => /^github::(create_repository|create_or_update_file|get_file_contents|push_files|create_branch)/.test(id) },
+      ];
+      function regionOf(nid) {
+        const r = REGIONS.find(r => r.test(nid));
+        return r ? r.key : 'other';
+      }
+      const regionByKey = new Map(REGIONS.map(r => [r.key, r]));
 
       // ── stats ─────────────────────────────────────────
       const directCt   = G.edges.filter(e => e.type === 'direct').length;
@@ -631,16 +949,31 @@
       const footerEl = document.getElementById('footer-servers');
       footerEl.innerHTML = '<span>SERVERS:</span> ' + toolkits.sort().map(t => `<span><span class="sname">${t}</span> · ${toolkitCounts[t]}</span>`).join('');
 
-      // ── dagre layout ──────────────────────────────────
-      const NODE_H = 30;
-      const widthFor = label => Math.max(120, Math.min(240, 28 + label.length * 6.4));
+      // ── dagre layout (compound: nodes parented by region for visual clustering) ──
+      const NODE_H_BASE = 30;
+      const widthFor = (label, mult) => Math.max(110, Math.min(260, (28 + label.length * 6.4) * mult));
 
-      const dg = new dagre.graphlib.Graph();
-      dg.setGraph({ rankdir: 'LR', nodesep: 22, ranksep: 110, marginx: 50, marginy: 50 });
+      const dg = new dagre.graphlib.Graph({ compound: true });
+      dg.setGraph({ rankdir: 'LR', nodesep: 26, ranksep: 110, marginx: 50, marginy: 50 });
       dg.setDefaultEdgeLabel(() => ({}));
 
+      // Create cluster (region) nodes first, then attach members.
+      const activeRegions = new Set();
+      G.nodes.forEach(n => activeRegions.add(regionOf(n.id)));
+      activeRegions.forEach(rk => {
+        if (rk === 'other') return;
+        dg.setNode('region:' + rk, { label: regionByKey.get(rk)?.label || rk, clusterLabelPos: 'top' });
+      });
+
       G.nodes.forEach(n => {
-        dg.setNode(n.id, { width: widthFor(labelOf(n.id)), height: NODE_H, _node: n });
+        const mult = sizeMultiplier(n.id);
+        dg.setNode(n.id, {
+          width: widthFor(labelOf(n.id), mult),
+          height: Math.round(NODE_H_BASE * (0.92 + mult * 0.1)),
+          _node: n,
+        });
+        const rk = regionOf(n.id);
+        if (rk !== 'other') dg.setParent(n.id, 'region:' + rk);
       });
       G.edges.forEach((e, i) => {
         dg.setEdge(e.from, e.to, { _edge: e, _idx: i });
@@ -655,17 +988,63 @@
       // ── render ────────────────────────────────────────
       const svg = document.getElementById('graph');
       const viewport = document.getElementById('viewport');
+      const regionsLayer = document.getElementById('regions-layer');
       const edgesLayer = document.getElementById('edges-layer');
       const nodesLayer = document.getElementById('nodes-layer');
+      const overlayLayer = document.getElementById('overlay-layer');
 
-      // SVG fits content via preserveAspectRatio="xMidYMid meet" once viewBox is set
       svg.setAttribute('viewBox', `-40 -40 ${W + 80} ${H + 80}`);
 
-      // Initial zoom-in past fit-to-viewport so edges + labels are immediately legible.
-      // Keeps the graph center anchored so the user lands in the middle of the dependency map.
-      const INITIAL_SCALE = 1.45;
+      const INITIAL_SCALE = 1.4;
+
+      // ── REGION boxes + editorial labels ───────────────
+      const REGION_LABEL_OFFSET = 10;  // px above region rect
+      activeRegions.forEach(rk => {
+        if (rk === 'other') return;
+        const r = dg.node('region:' + rk);
+        if (!r) return;
+        const meta = regionByKey.get(rk);
+        const pad = 18;
+        const x = r.x - r.width / 2 - pad;
+        const y = r.y - r.height / 2 - pad - 12;
+        const w = r.width + pad * 2;
+        const h = r.height + pad * 2 + 12;
+
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'region');
+        g.dataset.region = rk;
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', x);
+        rect.setAttribute('y', y);
+        rect.setAttribute('width', w);
+        rect.setAttribute('height', h);
+        rect.setAttribute('rx', 4);
+        g.appendChild(rect);
+
+        const numT = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        numT.setAttribute('x', x + 12);
+        numT.setAttribute('y', y + 16);
+        numT.setAttribute('class', 'region-num');
+        numT.textContent = '§ ' + meta.num;
+        g.appendChild(numT);
+
+        const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        lbl.setAttribute('x', x + 36);
+        lbl.setAttribute('y', y + 16);
+        lbl.textContent = meta.label;
+        g.appendChild(lbl);
+
+        regionsLayer.appendChild(g);
+      });
+
+      // ── EDGES ─────────────────────────────────────────
+      const HERO_FROM = 'fetch::fetch';
+      const HERO_TO   = 'filesystem::write_file';
+      const HERO_VIA  = 'content';
 
       const edgeEls = [];
+      let heroEdgeRef = null;
       dg.edges().forEach((eid, i) => {
         const m = dg.edge(eid);
         const e = m._edge;
@@ -673,23 +1052,43 @@
         const d = pathFromPoints(points);
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         g.setAttribute('class', `edge ${e.type}`);
+        if (e.confidence) g.dataset.confidence = e.confidence;
         g.dataset.idx = m._idx;
         g.dataset.from = e.from;
         g.dataset.to = e.to;
         g.style.animationDelay = `${600 + i * 6}ms`;
+
+        const isHero = e.from === HERO_FROM && e.to === HERO_TO && e.consumes === HERO_VIA;
+        if (isHero) { g.classList.add('hero-pulse'); heroEdgeRef = e; }
+
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', d);
         path.setAttribute('marker-end', e.type === 'semantic' ? 'url(#arr-verm)' : 'url(#arr-ink)');
         g.appendChild(path);
+
+        // Reading-direction marker at midpoint (small arrow, shown on highlight/selection)
+        if (points && points.length >= 2) {
+          const mid = points[Math.floor(points.length / 2)];
+          const dir = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          dir.setAttribute('class', 'edge-dir');
+          dir.setAttribute('x', mid.x);
+          dir.setAttribute('y', mid.y - 4);
+          dir.setAttribute('text-anchor', 'middle');
+          dir.textContent = '▶ ' + e.consumes;
+          g.appendChild(dir);
+        }
+
         edgesLayer.appendChild(g);
         edgeEls.push({ g, edge: e });
         g.addEventListener('mouseenter', () => highlightEdge(e, true));
         g.addEventListener('mouseleave', () => highlightEdge(e, false));
-        g.addEventListener('click', (ev) => { ev.stopPropagation(); selectEdge(e); });
+        g.addEventListener('click', (ev) => { ev.stopPropagation(); selectEdge(e); spawnRipple(ev); });
       });
 
+      // ── NODES ─────────────────────────────────────────
       const nodeEls = [];
       dg.nodes().forEach((nid, i) => {
+        if (nid.startsWith('region:')) return;
         const m = dg.node(nid);
         const n = m._node;
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -697,7 +1096,9 @@
         g.setAttribute('transform', `translate(${m.x - m.width/2}, ${m.y - m.height/2})`);
         g.dataset.id = n.id;
         g.dataset.toolkit = n.toolkit;
-        g.style.animationDelay = `${200 + i * 14}ms`;
+        g.dataset.weight = weightClass(n.id);
+        g.dataset.degree = degree.get(n.id) || 0;
+        g.style.animationDelay = `${200 + i * 12}ms`;
 
         const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         rect.setAttribute('width', m.width);
@@ -714,20 +1115,25 @@
 
         nodesLayer.appendChild(g);
         nodeEls.push({ g, node: n });
-        g.addEventListener('click', (ev) => { ev.stopPropagation(); selectNode(n); });
+
+        g.addEventListener('mouseenter', () => hoverNode(n, true));
+        g.addEventListener('mouseleave', () => hoverNode(n, false));
+        g.addEventListener('click', (ev) => { ev.stopPropagation(); selectNode(n); spawnRipple(ev); });
       });
 
       svg.addEventListener('click', () => { clearSelection(); });
 
-      // ── pan & zoom (operates in viewBox space) ────────
-      // Initialise so the graph centre is preserved at INITIAL_SCALE: tx = cx*(1-scale)
+      // ── pan & zoom ────────────────────────────────────
       let scale = INITIAL_SCALE;
       let tx = (W / 2) * (1 - INITIAL_SCALE);
       let ty = (H / 2) * (1 - INITIAL_SCALE);
+      let minimapReady = false;
       function applyTransform() {
         viewport.setAttribute('transform', `translate(${tx} ${ty}) scale(${scale})`);
+        if (minimapReady) updateMinimapViewport();
       }
       applyTransform();
+
       function clientToVB(cx, cy) {
         const pt = svg.createSVGPoint();
         pt.x = cx; pt.y = cy;
@@ -742,7 +1148,6 @@
         const vb = clientToVB(ev.clientX, ev.clientY);
         const delta = -ev.deltaY * 0.0015;
         const newScale = Math.max(0.25, Math.min(4, scale * (1 + delta)));
-        // (vb - tx) / scale is the un-transformed point; want it to stay at (vb)
         tx = vb.x - (vb.x - tx) * (newScale / scale);
         ty = vb.y - (vb.y - ty) * (newScale / scale);
         scale = newScale;
@@ -782,6 +1187,41 @@
         return d;
       }
 
+      function spawnRipple(ev) {
+        const vb = clientToVB(ev.clientX, ev.clientY);
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('class', 'ripple');
+        c.setAttribute('cx', vb.x);
+        c.setAttribute('cy', vb.y);
+        c.setAttribute('r', 12);
+        overlayLayer.appendChild(c);
+        setTimeout(() => c.remove(), 520);
+      }
+
+      // ── hover dimming (1-degree neighbours) ───────────
+      function hoverNode(n, on) {
+        if (selectedId || findActive) return;
+        if (!on) {
+          nodeEls.forEach(({ g }) => g.classList.remove('faded'));
+          edgeEls.forEach(({ g }) => g.classList.remove('dim'));
+          return;
+        }
+        const lit = new Set([n.id]);
+        const litEdges = new Set();
+        G.edges.forEach((e, i) => {
+          if (e.from === n.id || e.to === n.id) {
+            lit.add(e.from); lit.add(e.to);
+            litEdges.add(i);
+          }
+        });
+        nodeEls.forEach(({ g, node }) => {
+          g.classList.toggle('faded', !lit.has(node.id));
+        });
+        edgeEls.forEach(({ g }, i) => {
+          g.classList.toggle('dim', !litEdges.has(i));
+        });
+      }
+
       function highlightEdge(e, on) {
         if (selectedId) return;
         edgeEls.forEach(({ g, edge }) => {
@@ -803,6 +1243,7 @@
         nodeEls.forEach(({ g, node }) => {
           g.classList.toggle('selected', node.id === n.id);
           g.classList.toggle('dim', !connected.has(node.id));
+          g.classList.remove('faded');
         });
         edgeEls.forEach(({ g }, i) => {
           g.classList.toggle('highlighted', connEdges.has(i));
@@ -818,6 +1259,7 @@
         nodeEls.forEach(({ g, node }) => {
           g.classList.toggle('selected', node.id === e.from || node.id === e.to);
           g.classList.toggle('dim', !lit.has(node.id));
+          g.classList.remove('faded');
         });
         edgeEls.forEach(({ g }, i) => {
           g.classList.toggle('selected', i === idx);
@@ -828,14 +1270,40 @@
 
       function clearSelection() {
         selectedId = null;
-        nodeEls.forEach(({ g }) => { g.classList.remove('selected', 'dim'); });
+        nodeEls.forEach(({ g }) => { g.classList.remove('selected', 'dim', 'faded'); });
         edgeEls.forEach(({ g }) => { g.classList.remove('selected', 'dim', 'highlighted'); });
-        document.getElementById('sel').innerHTML = `
-          <div class="sel-empty">Click a node to inspect a tool's required parameters and the producers that may supply them. Click an edge to see why it was inferred.</div>`;
+        renderHeroCard();
       }
 
       function escapeHTML(s) {
         return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      }
+
+      // ── hero card (always-meaningful empty state) ─────
+      function renderHeroCard() {
+        const sel = document.getElementById('sel');
+        if (heroEdgeRef) {
+          const e = heroEdgeRef;
+          sel.innerHTML = `
+            <div class="hero-card">
+              <div class="hc-kicker">Cross-server highlight</div>
+              <div class="hc-chain">
+                <b>${escapeHTML(e.from)}</b>
+                <span class="hc-arrow">→</span>
+                <b>${escapeHTML(e.to)}</b>
+                <br/>via <span class="hc-via">${escapeHTML(e.consumes)}</span>
+              </div>
+              ${e.reason ? `<div class="hc-reason">${escapeHTML(e.reason)}</div>` : ''}
+              <span class="hc-cta" id="hero-cta">Show on map →</span>
+            </div>
+            <div class="hero-prompt">Hover a node to read its 1-degree neighbours · click for full detail · press <code>/</code> to find a tool by name.</div>`;
+          const cta = document.getElementById('hero-cta');
+          if (cta) cta.addEventListener('click', () => selectEdge(heroEdgeRef));
+        } else {
+          sel.innerHTML = `
+            <div class="hero-prompt">Hover a node to read its 1-degree neighbours · click for full detail · press <code>/</code> to find a tool by name.</div>`;
+        }
+        updateScrollAffordance();
       }
 
       function renderNodeDetail(n) {
@@ -888,6 +1356,7 @@
 
           <div class="panel-h" style="margin-top:22px">Consumers <small>${outEdges.length}</small></div>
           ${outHtml}`;
+        updateScrollAffordance();
       }
 
       function renderEdgeDetail(e) {
@@ -906,7 +1375,142 @@
             ${e.reason ? `<div class="ec-reason" style="font-family:var(--serif);font-style:italic;font-size:13px;color:var(--ink-muted);line-height:1.5;margin-top:18px;padding-top:14px;border-top:1px dotted var(--rule)">${escapeHTML(e.reason)}</div>` : ''}
             ${e.confidence ? `<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-faded);margin-top:14px">CONFIDENCE · <b style="color:var(--ink)">${escapeHTML(e.confidence)}</b></div>` : ''}
           </div>`;
+        updateScrollAffordance();
       }
+
+      // ── find / gazetteer ──────────────────────────────
+      const findInput = document.getElementById('find-input');
+      const findCount = document.getElementById('find-count');
+      let findActive = false;
+
+      function applyFind(query) {
+        const q = query.trim().toLowerCase();
+        if (!q) {
+          findActive = false;
+          nodeEls.forEach(({ g }) => g.classList.remove('faded', 'find-hit'));
+          edgeEls.forEach(({ g }) => g.classList.remove('dim'));
+          findCount.innerHTML = '&nbsp;';
+          return;
+        }
+        findActive = true;
+        let hits = 0;
+        const hitIds = new Set();
+        nodeEls.forEach(({ g, node }) => {
+          const match = node.id.toLowerCase().includes(q) || (node.description || '').toLowerCase().includes(q);
+          g.classList.toggle('find-hit', match);
+          g.classList.toggle('faded', !match);
+          if (match) { hits++; hitIds.add(node.id); }
+        });
+        edgeEls.forEach(({ g, edge }) => {
+          const both = hitIds.has(edge.from) && hitIds.has(edge.to);
+          g.classList.toggle('dim', !both);
+        });
+        findCount.textContent = hits === 0 ? 'no matches' : `${hits} match${hits === 1 ? '' : 'es'}`;
+      }
+
+      findInput.addEventListener('input', (ev) => applyFind(ev.target.value));
+      findInput.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape') { findInput.value = ''; applyFind(''); findInput.blur(); }
+      });
+      // Global '/' shortcut focuses the gazetteer (unless typing in another input)
+      window.addEventListener('keydown', (ev) => {
+        if (ev.key === '/' && document.activeElement.tagName !== 'INPUT') {
+          ev.preventDefault();
+          findInput.focus();
+          findInput.select();
+        }
+      });
+
+      // ── mini-map ──────────────────────────────────────
+      const minimapSvg = document.getElementById('minimap-svg');
+      const minimapContent = document.getElementById('minimap-content');
+      const minimapViewport = document.getElementById('minimap-viewport');
+      const MM_PAD = 20;
+      minimapSvg.setAttribute('viewBox', `${-MM_PAD} ${-MM_PAD} ${W + MM_PAD*2} ${H + MM_PAD*2}`);
+
+      // tiny edges
+      dg.edges().forEach((eid) => {
+        const m = dg.edge(eid);
+        const e = m._edge;
+        const d = pathFromPoints(m.points);
+        const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        p.setAttribute('class', 'mm-edge');
+        p.setAttribute('d', d);
+        minimapContent.appendChild(p);
+      });
+
+      // tiny nodes
+      dg.nodes().forEach((nid) => {
+        if (nid.startsWith('region:')) return;
+        const m = dg.node(nid);
+        const n = m._node;
+        const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        r.setAttribute('class', 'mm-node');
+        r.dataset.toolkit = n.toolkit;
+        r.setAttribute('x', m.x - m.width / 2);
+        r.setAttribute('y', m.y - m.height / 2);
+        r.setAttribute('width', m.width);
+        r.setAttribute('height', m.height);
+        r.setAttribute('rx', 2);
+        minimapContent.appendChild(r);
+      });
+
+      // viewport rect (computed from scale + tx + ty + stage size in VB-space)
+      function updateMinimapViewport() {
+        const stage = document.getElementById('stage');
+        const sw = stage.clientWidth || 1000;
+        const sh = stage.clientHeight || 600;
+        // Convert stage corners to viewBox space, then strip the viewport transform.
+        // Easier: a screen point (sx, sy) maps to VB by the SVG's CTM, then the
+        // viewport <g> applies (translate tx ty) scale s — so the un-transformed
+        // (graph-space) coords visible are: ((vbx - tx)/s, (vby - ty)/s).
+        const tl = clientToVB(stage.getBoundingClientRect().left, stage.getBoundingClientRect().top);
+        const br = clientToVB(stage.getBoundingClientRect().left + sw, stage.getBoundingClientRect().top + sh);
+        const x = (tl.x - tx) / scale;
+        const y = (tl.y - ty) / scale;
+        const w = (br.x - tl.x) / scale;
+        const h = (br.y - tl.y) / scale;
+        minimapViewport.setAttribute('x', x);
+        minimapViewport.setAttribute('y', y);
+        minimapViewport.setAttribute('width', w);
+        minimapViewport.setAttribute('height', h);
+      }
+
+      minimapSvg.addEventListener('click', (ev) => {
+        const rect = minimapSvg.getBoundingClientRect();
+        // map click position to viewBox of minimap (graph-space)
+        const fx = (ev.clientX - rect.left) / rect.width;
+        const fy = (ev.clientY - rect.top) / rect.height;
+        const gx = -MM_PAD + fx * (W + MM_PAD * 2);
+        const gy = -MM_PAD + fy * (H + MM_PAD * 2);
+        // Pan so gx,gy lands at viewport center (in VB space).
+        const stage = document.getElementById('stage');
+        const cVB = clientToVB(
+          stage.getBoundingClientRect().left + stage.clientWidth / 2,
+          stage.getBoundingClientRect().top + stage.clientHeight / 2,
+        );
+        tx += cVB.x - (gx * scale + tx);
+        ty += cVB.y - (gy * scale + ty);
+        applyTransform();
+      });
+
+      // ── panel scroll affordance ───────────────────────
+      const panelEl = document.getElementById('panel');
+      function updateScrollAffordance() {
+        requestAnimationFrame(() => {
+          const top = panelEl.scrollTop > 4;
+          const bottom = (panelEl.scrollTop + panelEl.clientHeight) < (panelEl.scrollHeight - 4);
+          panelEl.classList.toggle('scroll-top', top);
+          panelEl.classList.toggle('scroll-bottom', bottom);
+        });
+      }
+      panelEl.addEventListener('scroll', updateScrollAffordance);
+
+      // ── kickoff ───────────────────────────────────────
+      renderHeroCard();
+      minimapReady = true;
+      window.addEventListener('resize', () => requestAnimationFrame(updateMinimapViewport));
+      requestAnimationFrame(updateMinimapViewport);
     </script>
   </body>
 </html>
