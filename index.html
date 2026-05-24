@@ -305,9 +305,9 @@
       .node.selected rect { fill: var(--ink); }
       .node.selected text { fill: var(--paper); }
       .node.find-hit rect { stroke: var(--vermilion); stroke-width: 2.2; }
-      .node[data-toolkit="filesystem"] rect { stroke: var(--c-filesystem); }
-      .node[data-toolkit="fetch"] rect       { stroke: var(--c-fetch); }
-      .node[data-toolkit="github"] rect      { stroke: var(--c-github); }
+      /* Per-server border colors are injected dynamically at runtime
+         based on which servers actually appear in the graph data. See
+         the colorForServer() function + <style id="srv-palette">. */
       .node[data-weight="hub"] rect { stroke-width: 2.4; }
       .node[data-weight="hub"] text { font-weight: 600; font-size: 11.5px; }
       .node[data-weight="leaf"] text { font-size: 9.5px; font-weight: 400; }
@@ -385,9 +385,7 @@
       }
       #minimap-svg { width: 100%; height: 100%; display: block; cursor: crosshair; }
       #minimap .mm-node { fill: var(--ink-faded); }
-      #minimap .mm-node[data-toolkit="filesystem"] { fill: var(--c-filesystem); }
-      #minimap .mm-node[data-toolkit="fetch"]       { fill: var(--c-fetch); }
-      #minimap .mm-node[data-toolkit="github"]      { fill: var(--c-github); }
+      /* per-server minimap node fills injected dynamically (see #srv-palette). */
       #minimap .mm-edge { stroke: var(--vermilion); stroke-width: 0.4; opacity: 0.35; fill: none; }
       #minimap-viewport {
         fill: rgba(168, 66, 30, 0.08);
@@ -478,9 +476,7 @@
         border: 1.5px solid var(--c-default);
         background: var(--paper);
       }
-      .swatch.filesystem { border-color: var(--c-filesystem); }
-      .swatch.fetch      { border-color: var(--c-fetch); }
-      .swatch.github     { border-color: var(--c-github); }
+      /* per-server swatch border colors injected dynamically (see #srv-palette). */
       .legend-row .label {
         font-family: var(--mono);
         font-size: 11.5px;
@@ -595,9 +591,7 @@
         border: 1px solid;
         margin-bottom: 10px;
       }
-      .sel-server.filesystem { color: var(--c-filesystem); border-color: var(--c-filesystem); }
-      .sel-server.fetch      { color: var(--c-fetch);      border-color: var(--c-fetch); }
-      .sel-server.github     { color: var(--c-github);     border-color: var(--c-github); }
+      /* per-server selection-pill colors injected dynamically (see #srv-palette). */
       .sel-slug {
         font-family: var(--mono);
         font-size: 16px;
@@ -896,22 +890,51 @@
       }
 
       // ── regions (curatorial groupings) ────────────────
-      // Map each node id to a region — cartographic "districts" in the atlas
-      const REGIONS = [
-        { key: 'fs-write',  label: 'WRITE FILES',         num: 'I',   test: id => /^filesystem::(write|edit|move|create_directory)/.test(id) },
-        { key: 'fs-read',   label: 'READ FILES',          num: 'II',  test: id => /^filesystem::(read_|read$)/.test(id) },
-        { key: 'fs-disco',  label: 'DISCOVER FILES',      num: 'III', test: id => /^filesystem::(list|directory_tree|search_files|get_file_info|list_allowed)/.test(id) },
-        { key: 'fetch',     label: 'WEB FETCH',           num: 'IV',  test: id => /^fetch::/.test(id) },
-        { key: 'gh-disco',  label: 'DISCOVERY',           num: 'V',   test: id => /^github::(search_|get_a_user|fork_repository|list_commits)/.test(id) },
-        { key: 'gh-pr',     label: 'PULL REQUEST FLOW',   num: 'VI',  test: id => /^github::(.*pull_request.*|merge_pull_request)/.test(id) },
-        { key: 'gh-issue',  label: 'ISSUE FLOW',          num: 'VII', test: id => /^github::(.*issue.*|add_issue_comment)/.test(id) },
-        { key: 'gh-repo',   label: 'REPO & FILES',        num: 'VIII',test: id => /^github::(create_repository|create_or_update_file|get_file_contents|push_files|create_branch)/.test(id) },
+      // Curated rules for KNOWN servers — produce nicely-named districts
+      // (READ FILES / PULL REQUEST FLOW / etc.). For any server not covered
+      // here, regionOf() falls back to one district per server, auto-labelled
+      // and auto-numbered. So new MCP servers degrade gracefully.
+      const REGION_RULES = [
+        { key: 'fs-write',  label: 'WRITE FILES',         test: id => /^filesystem::(write|edit|move|create_directory)/.test(id) },
+        { key: 'fs-read',   label: 'READ FILES',          test: id => /^filesystem::(read_|read$)/.test(id) },
+        { key: 'fs-disco',  label: 'DISCOVER FILES',      test: id => /^filesystem::(list|directory_tree|search_files|get_file_info|list_allowed)/.test(id) },
+        { key: 'fetch',     label: 'WEB FETCH',           test: id => /^fetch::/.test(id) },
+        { key: 'gh-disco',  label: 'DISCOVERY',           test: id => /^github::(search_|get_a_user|fork_repository|list_commits)/.test(id) },
+        { key: 'gh-pr',     label: 'PULL REQUEST FLOW',   test: id => /^github::(.*pull_request.*|merge_pull_request)/.test(id) },
+        { key: 'gh-issue',  label: 'ISSUE FLOW',          test: id => /^github::(.*issue.*|add_issue_comment)/.test(id) },
+        { key: 'gh-repo',   label: 'REPO & FILES',        test: id => /^github::(create_repository|create_or_update_file|get_file_contents|push_files|create_branch)/.test(id) },
       ];
       function regionOf(nid) {
-        const r = REGIONS.find(r => r.test(nid));
-        return r ? r.key : 'other';
+        const r = REGION_RULES.find(r => r.test(nid));
+        if (r) return r.key;
+        const server = nid.split('::')[0] || nid;
+        return 'srv:' + server;  // fallback: one district per server
       }
-      const regionByKey = new Map(REGIONS.map(r => [r.key, r]));
+      // Roman numeral helper for auto-numbering regions (1..30 is more than enough)
+      function toRoman(n) {
+        const map = [['X', 10], ['IX', 9], ['V', 5], ['IV', 4], ['I', 1]];
+        let s = '';
+        for (const [r, v] of map) while (n >= v) { s += r; n -= v; }
+        return s || 'I';
+      }
+      // Build region metadata in a stable order: curated regions in their
+      // declared order first (only if used), then fallback per-server regions.
+      const regionByKey = new Map();
+      const orderedRegionKeys = [];
+      REGION_RULES.forEach(rule => {
+        if (G.nodes.some(n => regionOf(n.id) === rule.key)) {
+          regionByKey.set(rule.key, { label: rule.label, num: '' });
+          orderedRegionKeys.push(rule.key);
+        }
+      });
+      G.nodes.forEach(n => {
+        const k = regionOf(n.id);
+        if (k === 'other' || regionByKey.has(k)) return;
+        const srv = k.replace('srv:', '');
+        regionByKey.set(k, { label: srv.toUpperCase() + ' TOOLS', num: '' });
+        orderedRegionKeys.push(k);
+      });
+      orderedRegionKeys.forEach((k, i) => { regionByKey.get(k).num = toRoman(i + 1); });
 
       // ── stats ─────────────────────────────────────────
       const directCt   = G.edges.filter(e => e.type === 'direct').length;
@@ -935,12 +958,53 @@
       const numWords = { 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight' };
       document.getElementById('srv-pill-count').textContent = `${numWords[toolkits.length] || toolkits.length} servers`;
 
+      // ── dynamic server palette ────────────────────────
+      // Editorial-tuned hues for any MCP server, in roughly ROY-G-BIV order
+      // tweaked toward muted, ink-friendly tones. We hold demo defaults for
+      // filesystem/fetch/github (same colors as before) so the live demo
+      // looks identical, then deterministically pick from this palette for
+      // any other server by hashing the name.
+      const SERVER_PALETTE = [
+        '#3a5d4d',  // forest
+        '#4a4a78',  // dusk
+        '#7a3d5e',  // aubergine
+        '#7d5a1d',  // ochre
+        '#1d5d7a',  // steel-blue
+        '#5d3a7a',  // plum
+        '#7a4a3a',  // umber
+        '#3a7a6a',  // teal
+      ];
+      const DEMO_COLORS = { filesystem: '#3a5d4d', fetch: '#4a4a78', github: '#7a3d5e' };
+      function colorForServer(name) {
+        if (DEMO_COLORS[name]) return DEMO_COLORS[name];
+        let h = 0;
+        for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+        return SERVER_PALETTE[h % SERVER_PALETTE.length];
+      }
+
+      // Inject per-server CSS rules so anything with [data-toolkit="<srv>"]
+      // adopts the server's hue — works for any string, including names with
+      // hyphens or unusual chars that would break class-based selectors.
+      const palStyle = document.createElement('style');
+      palStyle.id = 'srv-palette';
+      palStyle.textContent = toolkits.map(t => {
+        const c = colorForServer(t);
+        const cssAttr = `[data-toolkit="${CSS.escape(t)}"]`;
+        return `
+          .node${cssAttr} rect          { stroke: ${c}; }
+          .swatch${cssAttr}             { border-color: ${c}; }
+          .sel-server${cssAttr}         { color: ${c}; border-color: ${c}; }
+          #minimap .mm-node${cssAttr}   { fill: ${c}; }
+        `;
+      }).join('\n');
+      document.head.appendChild(palStyle);
+
       const legendEl = document.getElementById('legend-servers');
       toolkits.sort().forEach(t => {
         const row = document.createElement('div');
         row.className = 'legend-row';
         row.innerHTML = `
-          <div class="sample"><div class="swatch ${t}"></div></div>
+          <div class="sample"><div class="swatch" data-toolkit="${t}"></div></div>
           <div class="label">${t}</div>
           <div class="count">${toolkitCounts[t]}</div>`;
         legendEl.appendChild(row);
@@ -1356,7 +1420,7 @@
           : '<div class="placeholder">no downstream consumers traced</div>';
 
         document.getElementById('sel').innerHTML = `
-          <div class="sel-server ${n.toolkit}">${n.toolkit}</div>
+          <div class="sel-server" data-toolkit="${escapeHTML(n.toolkit)}">${escapeHTML(n.toolkit)}</div>
           <div class="sel-slug">${escapeHTML(n.id)}</div>
           <div class="sel-desc">${escapeHTML(n.description || '—')}</div>
 
@@ -1378,11 +1442,11 @@
           <div class="ec-type ${e.type}" style="margin-bottom:14px">${e.type} edge</div>
           <div style="padding:0">
             <div class="ec-arrow" style="font-family:var(--mono);font-size:10px;color:var(--ink-faded);letter-spacing:0.1em">PRODUCER</div>
-            <div class="sel-server ${fromNode?.toolkit}" style="margin: 6px 0 4px">${escapeHTML(fromNode?.toolkit || '')}</div>
+            <div class="sel-server" data-toolkit="${escapeHTML(fromNode?.toolkit || '')}" style="margin: 6px 0 4px">${escapeHTML(fromNode?.toolkit || '')}</div>
             <div class="ec-tool" style="font-family:var(--mono);font-weight:600;font-size:14px">${escapeHTML(e.from)}</div>
             <div style="font-family:var(--mono);font-size:11px;color:var(--ink-faded);letter-spacing:0.1em;margin:14px 0">↓ supplies <b style="color:var(--vermilion)">${escapeHTML(e.consumes)}</b></div>
             <div class="ec-arrow" style="font-family:var(--mono);font-size:10px;color:var(--ink-faded);letter-spacing:0.1em">CONSUMER</div>
-            <div class="sel-server ${toNode?.toolkit}" style="margin: 6px 0 4px">${escapeHTML(toNode?.toolkit || '')}</div>
+            <div class="sel-server" data-toolkit="${escapeHTML(toNode?.toolkit || '')}" style="margin: 6px 0 4px">${escapeHTML(toNode?.toolkit || '')}</div>
             <div class="ec-tool" style="font-family:var(--mono);font-weight:600;font-size:14px">${escapeHTML(e.to)}</div>
             ${e.reason ? `<div class="ec-reason" style="font-family:var(--serif);font-style:italic;font-size:13px;color:var(--ink-muted);line-height:1.5;margin-top:18px;padding-top:14px;border-top:1px dotted var(--rule)">${escapeHTML(e.reason)}</div>` : ''}
             ${e.confidence ? `<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-faded);margin-top:14px">CONFIDENCE · <b style="color:var(--ink)">${escapeHTML(e.confidence)}</b></div>` : ''}
