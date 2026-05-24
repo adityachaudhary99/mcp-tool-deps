@@ -1,0 +1,10 @@
+[
+  {
+    "from": "filesystem::list_allowed_directories",
+    "to": "filesystem::search_files",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The list_allowed_directories tool provides a list of accessible root directories, which are valid starting points for the path parameter of search_files."
+  }
+]

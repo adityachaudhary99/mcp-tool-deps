@@ -1,0 +1,26 @@
+[
+  {
+    "from": "filesystem::list_directory",
+    "to": "filesystem::read_text_file",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The list_directory tool provides a list of file and directory paths, which an agent can use to identify a specific file to read with read_text_file."
+  },
+  {
+    "from": "filesystem::list_directory_with_sizes",
+    "to": "filesystem::read_text_file",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The list_directory_with_sizes tool provides a list of file and directory paths, including sizes, which an agent can use to identify a specific file to read with read_text_file."
+  },
+  {
+    "from": "filesystem::search_files",
+    "to": "filesystem::read_text_file",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The search_files tool returns paths of files that match a given pattern, directly providing the path needed by read_text_file."
+  }
+]

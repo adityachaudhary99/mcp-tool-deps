@@ -1,0 +1,42 @@
+[
+  {
+    "from": "github::list_issues",
+    "to": "github::add_issue_comment",
+    "consumes": "issue_number",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Listing issues in a repository allows the agent to discover the correct issue_number to comment on."
+  },
+  {
+    "from": "github::search_issues",
+    "to": "github::add_issue_comment",
+    "consumes": "issue_number",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching for issues across repositories helps find the specific issue_number needed to add a comment."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::add_issue_comment",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching for repositories helps identify the correct repository name to post the comment to."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::add_issue_comment",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching for repositories helps identify the owner of the repository where the issue resides."
+  },
+  {
+    "from": "filesystem::read_text_file",
+    "to": "github::add_issue_comment",
+    "consumes": "body",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Reading a local text file provides the text content to be used as the body of the issue comment."
+  }
+]

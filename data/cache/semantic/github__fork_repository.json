@@ -1,0 +1,26 @@
+[
+  {
+    "from": "github::search_repositories",
+    "to": "github::fork_repository",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching for repositories returns the repository owner's username or organization name."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::fork_repository",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching for repositories returns the repository name."
+  },
+  {
+    "from": "github::search_users",
+    "to": "github::fork_repository",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching for users helps resolve the correct username or organization name for the repository owner."
+  }
+]

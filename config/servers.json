@@ -1,0 +1,23 @@
+{
+  "servers": [
+    {
+      "name": "filesystem",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
+      "description": "Local filesystem operations (read/write/list/search)."
+    },
+    {
+      "name": "github",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "$GITHUB_TOKEN" },
+      "description": "GitHub repo + issue + PR operations. Requires GITHUB_TOKEN in env."
+    },
+    {
+      "name": "fetch",
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "description": "Fetch a URL and return its contents."
+    }
+  ]
+}

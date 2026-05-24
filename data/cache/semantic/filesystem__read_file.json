@@ -1,0 +1,34 @@
+[
+  {
+    "from": "filesystem::list_directory",
+    "to": "filesystem::read_file",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The list_directory tool provides a list of file and directory paths, which an agent can use to determine the path for read_file."
+  },
+  {
+    "from": "filesystem::list_directory_with_sizes",
+    "to": "filesystem::read_file",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The list_directory_with_sizes tool provides a list of file and directory paths, including their sizes, which an agent can use to determine the path for read_file."
+  },
+  {
+    "from": "filesystem::search_files",
+    "to": "filesystem::read_file",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The search_files tool directly returns paths of files matching a pattern, which can be used as the path parameter for read_file."
+  },
+  {
+    "from": "filesystem::directory_tree",
+    "to": "filesystem::read_file",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "The directory_tree tool provides a hierarchical view of files and directories, from which an agent can construct the path to a specific file for read_file."
+  }
+]

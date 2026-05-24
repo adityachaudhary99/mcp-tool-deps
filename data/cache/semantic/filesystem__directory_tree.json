@@ -1,0 +1,18 @@
+[
+  {
+    "from": "filesystem::list_allowed_directories",
+    "to": "filesystem::directory_tree",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The list of allowed directories provides valid root paths that an agent might want to explore recursively using `directory_tree`."
+  },
+  {
+    "from": "filesystem::search_files",
+    "to": "filesystem::directory_tree",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The paths of directories found by `search_files` can be used as the starting point for recursively listing their contents with `directory_tree`."
+  }
+]

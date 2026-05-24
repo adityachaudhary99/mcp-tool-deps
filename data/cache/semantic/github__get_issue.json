@@ -1,0 +1,34 @@
+[
+  {
+    "from": "github::list_issues",
+    "to": "github::get_issue",
+    "consumes": "issue_number",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Listing issues in a repository is the standard way to discover the issue_number needed to fetch a specific issue's details."
+  },
+  {
+    "from": "github::search_issues",
+    "to": "github::get_issue",
+    "consumes": "issue_number",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching issues across repositories allows discovering the specific issue_number for a given issue."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::get_issue",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching repositories helps discover the owner name of a repository."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::get_issue",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching repositories helps discover the repository name."
+  }
+]

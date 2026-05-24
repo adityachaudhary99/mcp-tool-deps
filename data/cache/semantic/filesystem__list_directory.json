@@ -1,0 +1,34 @@
+[
+  {
+    "from": "filesystem::list_allowed_directories",
+    "to": "filesystem::list_directory",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "An agent would typically list allowed directories to understand its accessible scope before attempting to list the contents of any specific directory."
+  },
+  {
+    "from": "filesystem::search_files",
+    "to": "filesystem::list_directory",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "An agent might search for directories matching a pattern and then choose one of the found directory paths to list its immediate contents."
+  },
+  {
+    "from": "filesystem::create_directory",
+    "to": "filesystem::list_directory",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "After creating a new directory, an agent may want to list its contents to verify creation or inspect its initial state."
+  },
+  {
+    "from": "filesystem::move_file",
+    "to": "filesystem::list_directory",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "After moving a directory, an agent may want to list its contents at the new location to confirm the operation or inspect its new state."
+  }
+]

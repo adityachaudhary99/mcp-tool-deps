@@ -1,0 +1,34 @@
+[
+  {
+    "from": "filesystem::search_files",
+    "to": "filesystem::read_multiple_files",
+    "consumes": "paths",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The search_files tool directly returns a list of file paths that match a given pattern, which perfectly satisfies the paths array parameter for reading multiple files."
+  },
+  {
+    "from": "filesystem::list_directory",
+    "to": "filesystem::read_multiple_files",
+    "consumes": "paths",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "The list_directory tool returns a list of files and directories, from which an agent can parse and extract file paths to be read."
+  },
+  {
+    "from": "filesystem::list_directory_with_sizes",
+    "to": "filesystem::read_multiple_files",
+    "consumes": "paths",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "The list_directory_with_sizes tool returns a list of files and directories with their sizes, from which an agent can parse and extract file paths to be read."
+  },
+  {
+    "from": "filesystem::directory_tree",
+    "to": "filesystem::read_multiple_files",
+    "consumes": "paths",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "The directory_tree tool provides a recursive JSON structure of files and directories, from which an agent can traverse and extract file paths to be read."
+  }
+]

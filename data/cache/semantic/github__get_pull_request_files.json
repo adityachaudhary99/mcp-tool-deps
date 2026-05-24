@@ -1,0 +1,34 @@
+[
+  {
+    "from": "github::list_pull_requests",
+    "to": "github::get_pull_request_files",
+    "consumes": "pull_number",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Listing pull requests in a repository provides their numbers, which are required to fetch the files changed in a specific pull request."
+  },
+  {
+    "from": "github::search_issues",
+    "to": "github::get_pull_request_files",
+    "consumes": "pull_number",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching for pull requests returns issue/pull request numbers that can be used to identify the target pull request."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::get_pull_request_files",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching for repositories helps discover the owner name required to query pull request files."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::get_pull_request_files",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching for repositories helps discover the repository name required to query pull request files."
+  }
+]

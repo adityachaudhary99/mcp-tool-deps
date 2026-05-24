@@ -1,0 +1,26 @@
+[
+  {
+    "from": "github::list_pull_requests",
+    "to": "github::update_pull_request_branch",
+    "consumes": "pull_number",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Listing pull requests in a repository provides the pull_number for the target pull request to update."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::update_pull_request_branch",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching repositories allows the agent to find the owner of the repository."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::update_pull_request_branch",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching repositories allows the agent to find the name of the repository."
+  }
+]

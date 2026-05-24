@@ -1,0 +1,18 @@
+[
+  {
+    "from": "github::list_pull_requests",
+    "to": "github::get_pull_request",
+    "consumes": "pull_number",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Listing pull requests in a repository provides the pull request numbers needed to retrieve details for a specific pull request."
+  },
+  {
+    "from": "github::search_issues",
+    "to": "github::get_pull_request",
+    "consumes": "pull_number",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching issues and pull requests across repositories can help identify the specific pull request number to retrieve."
+  }
+]

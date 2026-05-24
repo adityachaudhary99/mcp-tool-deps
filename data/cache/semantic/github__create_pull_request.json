@@ -1,0 +1,26 @@
+[
+  {
+    "from": "github::search_repositories",
+    "to": "github::create_pull_request",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching repositories allows the agent to find the owner (username or organization) of the target repository."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::create_pull_request",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching repositories allows the agent to find the exact repository name needed to create the pull request."
+  },
+  {
+    "from": "github::search_users",
+    "to": "github::create_pull_request",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching users helps resolve the correct GitHub username or organization name for the repository owner."
+  }
+]

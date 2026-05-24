@@ -1,0 +1,26 @@
+[
+  {
+    "from": "github::search_repositories",
+    "to": "github::list_commits",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching for repositories returns repository details including the owner's login name."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::list_commits",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching for repositories returns the repository name needed to identify the target repository."
+  },
+  {
+    "from": "github::search_users",
+    "to": "github::list_commits",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching for users helps resolve the correct username or organization name to use as the owner."
+  }
+]

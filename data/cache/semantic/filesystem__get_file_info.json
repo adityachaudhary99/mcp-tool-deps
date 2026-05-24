@@ -1,0 +1,42 @@
+[
+  {
+    "from": "filesystem::list_directory",
+    "to": "filesystem::get_file_info",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The list_directory tool provides a list of file and directory names/paths, which can directly serve as input for get_file_info."
+  },
+  {
+    "from": "filesystem::list_directory_with_sizes",
+    "to": "filesystem::get_file_info",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The list_directory_with_sizes tool provides a list of file and directory names/paths, which can directly serve as input for get_file_info."
+  },
+  {
+    "from": "filesystem::directory_tree",
+    "to": "filesystem::get_file_info",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The directory_tree tool provides a recursive view of files and directories, from which specific paths can be extracted to be used by get_file_info."
+  },
+  {
+    "from": "filesystem::search_files",
+    "to": "filesystem::get_file_info",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The search_files tool returns a list of file and directory paths that match a given pattern, which are direct inputs for get_file_info."
+  },
+  {
+    "from": "filesystem::list_allowed_directories",
+    "to": "filesystem::get_file_info",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "The list_allowed_directories tool provides a list of accessible root paths, which can be used as input for get_file_info to inspect those directories."
+  }
+]

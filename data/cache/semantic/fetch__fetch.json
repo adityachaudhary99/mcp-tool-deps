@@ -1,0 +1,10 @@
+[
+  {
+    "from": "filesystem::read_text_file",
+    "to": "fetch::fetch",
+    "consumes": "url",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "The content of a text file, read by `read_text_file`, can directly provide a URL string that `fetch::fetch` needs to access."
+  }
+]

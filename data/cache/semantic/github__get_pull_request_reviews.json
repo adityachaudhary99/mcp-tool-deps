@@ -1,0 +1,42 @@
+[
+  {
+    "from": "github::list_pull_requests",
+    "to": "github::get_pull_request_reviews",
+    "consumes": "pull_number",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Listing pull requests in a repository provides the pull request numbers needed to fetch their reviews."
+  },
+  {
+    "from": "github::get_pull_request",
+    "to": "github::get_pull_request_reviews",
+    "consumes": "pull_number",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Retrieving a specific pull request provides its number, which is required to fetch its reviews."
+  },
+  {
+    "from": "github::search_issues",
+    "to": "github::get_pull_request_reviews",
+    "consumes": "pull_number",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching for pull requests returns their numbers, which can be used to retrieve their reviews."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::get_pull_request_reviews",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching repositories helps discover the owner name required to query pull request reviews."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::get_pull_request_reviews",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching repositories helps discover the repository name required to query pull request reviews."
+  }
+]

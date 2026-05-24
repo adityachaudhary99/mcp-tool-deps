@@ -1,0 +1,34 @@
+[
+  {
+    "from": "filesystem::list_directory",
+    "to": "filesystem::read_media_file",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The list_directory tool provides a list of file names and paths within a directory, which can be used to identify the path for read_media_file."
+  },
+  {
+    "from": "filesystem::list_directory_with_sizes",
+    "to": "filesystem::read_media_file",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The list_directory_with_sizes tool provides a list of file names and paths within a directory, which can be used to identify the path for read_media_file."
+  },
+  {
+    "from": "filesystem::directory_tree",
+    "to": "filesystem::read_media_file",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "The directory_tree tool provides a hierarchical view of files and directories, from which an agent can derive the path to a media file."
+  },
+  {
+    "from": "filesystem::search_files",
+    "to": "filesystem::read_media_file",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "The search_files tool can directly locate the path of a media file based on a search pattern."
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "from": "github::search_code",
+    "to": "github::get_file_contents",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching for code returns matching file paths which can then be retrieved using get_file_contents."
+  },
+  {
+    "from": "github::search_code",
+    "to": "github::get_file_contents",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching for code returns the repository name where the code was found."
+  },
+  {
+    "from": "github::search_code",
+    "to": "github::get_file_contents",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching for code returns the repository owner where the code was found."
+  },
+  {
+    "from": "github::get_pull_request_files",
+    "to": "github::get_file_contents",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Retrieving pull request files provides the paths of changed files, which can then be read to inspect changes."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::get_file_contents",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching for repositories helps discover the repository name needed to fetch files."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::get_file_contents",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching for repositories helps discover the owner of the repository needed to fetch files."
+  }
+]

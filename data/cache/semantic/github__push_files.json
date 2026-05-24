@@ -1,0 +1,26 @@
+[
+  {
+    "from": "filesystem::read_multiple_files",
+    "to": "github::push_files",
+    "consumes": "files",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "This tool reads the contents and paths of multiple local files, which are required to populate the files array for pushing to GitHub."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::push_files",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching repositories helps resolve the exact repository name needed to push files."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::push_files",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching repositories helps resolve the owner or organization name associated with the target repository."
+  }
+]

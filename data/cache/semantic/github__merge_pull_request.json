@@ -1,0 +1,34 @@
+[
+  {
+    "from": "github::list_pull_requests",
+    "to": "github::merge_pull_request",
+    "consumes": "pull_number",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Listing the pull requests in a repository allows the agent to discover the correct pull_number to merge."
+  },
+  {
+    "from": "github::create_pull_request",
+    "to": "github::merge_pull_request",
+    "consumes": "pull_number",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Creating a pull request returns its number, which can then be immediately used to merge it."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::merge_pull_request",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching for repositories helps resolve the correct repository name required to merge a pull request."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::merge_pull_request",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching for repositories helps resolve the owner or organization name required to merge a pull request."
+  }
+]

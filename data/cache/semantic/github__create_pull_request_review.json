@@ -1,0 +1,42 @@
+[
+  {
+    "from": "github::list_pull_requests",
+    "to": "github::create_pull_request_review",
+    "consumes": "pull_number",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Listing pull requests in a repository is the standard way to discover the pull request number needed to create a review."
+  },
+  {
+    "from": "github::search_issues",
+    "to": "github::create_pull_request_review",
+    "consumes": "pull_number",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching for pull requests across repositories can help find the specific pull request number to review."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::create_pull_request_review",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching for a repository helps resolve the owner's username or organization name."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::create_pull_request_review",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching for a repository helps resolve the exact repository name."
+  },
+  {
+    "from": "filesystem::read_text_file",
+    "to": "github::create_pull_request_review",
+    "consumes": "body",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Reading a local text file can provide the body text or template for the pull request review."
+  }
+]

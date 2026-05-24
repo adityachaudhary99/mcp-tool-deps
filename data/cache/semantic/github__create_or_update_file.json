@@ -1,0 +1,26 @@
+[
+  {
+    "from": "filesystem::read_text_file",
+    "to": "github::create_or_update_file",
+    "consumes": "content",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Reads the content of a local file to be written to the GitHub repository."
+  },
+  {
+    "from": "github::get_file_contents",
+    "to": "github::create_or_update_file",
+    "consumes": "content",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Retrieves the content of a file from GitHub to be copied or updated in another location."
+  },
+  {
+    "from": "fetch::fetch",
+    "to": "github::create_or_update_file",
+    "consumes": "content",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Fetches text or markdown from a URL to be saved as a file in the repository."
+  }
+]

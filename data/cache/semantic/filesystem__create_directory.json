@@ -1,0 +1,10 @@
+[
+  {
+    "from": "filesystem::list_allowed_directories",
+    "to": "filesystem::create_directory",
+    "consumes": "path",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "An agent would use list_allowed_directories to determine valid root paths before constructing a new directory path to create."
+  }
+]

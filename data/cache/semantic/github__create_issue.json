@@ -1,0 +1,26 @@
+[
+  {
+    "from": "github::search_repositories",
+    "to": "github::create_issue",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching for repositories allows the agent to discover the owner of the target repository."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::create_issue",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching for repositories allows the agent to discover the exact repository name where the issue should be created."
+  },
+  {
+    "from": "github::search_users",
+    "to": "github::create_issue",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching for users helps resolve the correct username or organization to use as the owner of the repository."
+  }
+]

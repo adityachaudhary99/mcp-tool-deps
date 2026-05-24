@@ -1,0 +1,26 @@
+[
+  {
+    "from": "github::search_repositories",
+    "to": "github::list_pull_requests",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching repositories returns repository details including the owner's username or organization."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::list_pull_requests",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching repositories returns the repository name which can be used as the repo parameter."
+  },
+  {
+    "from": "github::search_users",
+    "to": "github::list_pull_requests",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching users helps resolve or verify the repository owner's username or organization name."
+  }
+]

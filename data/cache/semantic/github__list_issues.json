@@ -1,0 +1,26 @@
+[
+  {
+    "from": "github::search_repositories",
+    "to": "github::list_issues",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching repositories returns repository metadata, which includes the owner's login name."
+  },
+  {
+    "from": "github::search_repositories",
+    "to": "github::list_issues",
+    "consumes": "repo",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "Searching repositories returns repository metadata, which includes the repository name."
+  },
+  {
+    "from": "github::search_users",
+    "to": "github::list_issues",
+    "consumes": "owner",
+    "type": "semantic",
+    "confidence": "medium",
+    "reason": "Searching users can resolve a user or organization name to use as the repository owner."
+  }
+]

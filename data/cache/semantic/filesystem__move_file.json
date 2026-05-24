@@ -1,0 +1,34 @@
+[
+  {
+    "from": "filesystem::search_files",
+    "to": "filesystem::move_file",
+    "consumes": "source",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "An agent would use search_files to locate the specific file or directory path that needs to be moved."
+  },
+  {
+    "from": "filesystem::search_files",
+    "to": "filesystem::move_file",
+    "consumes": "destination",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "An agent might use search_files to locate an existing directory to serve as the destination for the move operation."
+  },
+  {
+    "from": "filesystem::list_directory",
+    "to": "filesystem::move_file",
+    "consumes": "source",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "An agent would list a directory to identify the file or directory path to be moved."
+  },
+  {
+    "from": "filesystem::list_directory",
+    "to": "filesystem::move_file",
+    "consumes": "destination",
+    "type": "semantic",
+    "confidence": "high",
+    "reason": "An agent would list a directory to identify an existing directory path as the target for the move operation."
+  }
+]
