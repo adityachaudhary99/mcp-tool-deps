@@ -17,7 +17,7 @@ Default demo (filesystem + fetch + github MCP servers):
 
 The cross-server headline: `fetch::fetch → filesystem::write_file [content]` — fetch a URL, write the payload to disk — surfaced by the semantic pass. (Drop the github server from `config/servers.json` for a smaller 15-node graph if you don't have a `GITHUB_TOKEN`.)
 
-![screenshot](viz/screenshot.png)
+![screenshot](screenshot.png)
 
 ## Install as a Skill
 
@@ -52,9 +52,9 @@ bun src/fetch.ts
 bun src/build.ts
 
 # View it (no build step, no server needed)
-start viz/index.html        # Windows
-open viz/index.html         # macOS
-xdg-open viz/index.html     # Linux
+start index.html        # Windows
+open index.html         # macOS
+xdg-open index.html     # Linux
 
 # Optional: serve the viz on http://localhost:5173
 bun src/serve.ts
@@ -113,8 +113,8 @@ Six small TypeScript files, each one stage of the pipeline:
 2. **`src/curate.ts`** — namespaces each tool's slug as `<server>::<tool>`, attaches its origin server, optionally filters by `config/allow-list.json` → `data/curated.json`.
 3. **`src/heuristics.ts`** — emits `direct` edges via slug+verb heuristics. For an `<noun>_id` / `<noun>Id` consumer param, finds producer tools whose slug contains the noun and a producer verb (LIST/GET/SEARCH/READ/...). Cross-server matches allowed. → `data/edges.direct.json`.
 4. **`src/semantic.ts`** — per-consumer LLM pass for semantic edges, with a per-consumer cache in `data/cache/semantic/`. The full catalog is presented (not one server at a time) so the LLM can find cross-server resolutions. → `data/edges.semantic.json`.
-5. **`src/merge.ts`** — combines edges, dedupes on `(from, to, consumes)`, drops bogus edges (consumer-shaped "producers", and id-shaped self-required outputs), sets `user_supplied: true` on params with no producer → `graph.json` + `viz/graph.js`.
-6. **`viz/index.html`** — single static page. Vanilla SVG + dagre layout, hand-rolled pan/zoom, dynamic per-server palette. Loads `graph.js` (no fetch / no CORS). No build step.
+5. **`src/merge.ts`** — combines edges, dedupes on `(from, to, consumes)`, drops bogus edges (consumer-shaped "producers", and id-shaped self-required outputs), sets `user_supplied: true` on params with no producer → `graph.json` + `graph.js`.
+6. **`index.html`** — single static page at repo root. Vanilla SVG + dagre layout, hand-rolled pan/zoom, dynamic per-server palette. Loads `graph.js` (no fetch / no CORS). No build step. Lives at root so static hosts (CreateOS, GitHub Pages, Netlify) serve it directly.
 
 See [APPROACH.md](APPROACH.md) for design rationale and limitations.
 

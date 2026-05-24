@@ -14,8 +14,7 @@ Bun.serve({
   port: 5173,
   async fetch(req) {
     const url = new URL(req.url);
-    let path = url.pathname === "/" ? "/viz/index.html" : url.pathname;
-    if (path.startsWith("/graph.js")) path = "/viz/graph.js"; // index.html refs ./graph.js
+    const path = url.pathname === "/" ? "/index.html" : url.pathname;
     try {
       const data = await readFile(`.${path}`);
       return new Response(data, {

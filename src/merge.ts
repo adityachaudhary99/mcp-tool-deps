@@ -1,7 +1,7 @@
 // Merge stage: combine direct + semantic + optional manual edges into the
 // final graph, dedupe, set `user_supplied: true` on params with no producer.
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import type { CuratedTool, Edge, Graph, ToolNode } from "./types.ts";
 
@@ -116,9 +116,8 @@ async function main() {
   const graph: Graph = { nodes, edges };
 
   await writeFile("graph.json", JSON.stringify(graph, null, 2), "utf-8");
-  await mkdir("viz", { recursive: true });
   await writeFile(
-    "viz/graph.js",
+    "graph.js",
     `window.GRAPH = ${JSON.stringify(graph)};\n`,
     "utf-8",
   );

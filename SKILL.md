@@ -62,9 +62,9 @@ bun src/build.ts
 bun run skill
 
 # 7. open the viz (no server required — single static page)
-start viz/index.html        # Windows
-open viz/index.html         # macOS
-xdg-open viz/index.html     # Linux
+start index.html        # Windows
+open index.html         # macOS
+xdg-open index.html     # Linux
 
 # optional: serve viz over http on :5173
 bun src/serve.ts
@@ -74,8 +74,8 @@ bun src/serve.ts
 
 | Path | Shape | Purpose |
 |---|---|---|
-| `graph.json` | `{nodes, edges}` | Canonical output. Consumed by `viz/` and any downstream tooling. |
-| `viz/index.html` + `viz/graph.js` | static HTML/JS | Interactive viewer — editorial cartographic aesthetic, pan/zoom, click a node to see required params + producers + consumers. |
+| `graph.json` | `{nodes, edges}` | Canonical output. Consumed by `index.html` and any downstream tooling. |
+| `index.html` + `graph.js` | static HTML/JS | Interactive viewer at repo root — editorial cartographic aesthetic, pan/zoom, click a node to see required params + producers + consumers. Hostable directly on any static site (CreateOS, GitHub Pages, Netlify, etc.). |
 | `data/raw/<server>.json` | raw tool dump | Per-server `list_tools` response. Cached between runs. |
 | `data/curated.json` | filtered tools | Subset after `config/allow-list.json` is applied. |
 | `data/edges.direct.json` | direct edges | Heuristic-derived edges. |

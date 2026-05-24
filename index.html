@@ -2,16 +2,898 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tool Dependency Graph — MCP</title>
-    <meta http-equiv="refresh" content="0; url=./viz/" />
-    <link rel="canonical" href="./viz/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    />
+    <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+    <script src="./graph.js"></script>
     <style>
-      html, body { margin: 0; padding: 0; height: 100%; background: #f0e9d8; }
-      body { display: grid; place-items: center; font-family: 'Iowan Old Style', Georgia, serif; color: #1a1612; }
-      a { color: inherit; border-bottom: 1px solid rgba(26,22,18,0.4); padding-bottom: 1px; text-decoration: none; }
+      :root {
+        /* paper & ink */
+        --paper:        #f0e9d8;
+        --paper-shade:  #e6dec9;
+        --paper-deep:   #ddd2b7;
+        --ink:          #1a1612;
+        --ink-muted:    #5a5044;
+        --ink-faded:    #8a7e6a;
+        --rule:         rgba(26, 22, 18, 0.16);
+        --rule-strong:  rgba(26, 22, 18, 0.32);
+        --vermilion:    #a8421e;
+        --vermilion-soft: rgba(168, 66, 30, 0.18);
+
+        /* server hues (muted, distinguishable) */
+        --c-filesystem: #3a5d4d;
+        --c-fetch:      #4a4a78;
+        --c-github:     #7a3d5e;
+        --c-default:    #5a5044;
+
+        --serif:  'Fraunces', 'Iowan Old Style', Georgia, serif;
+        --mono:   'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; height: 100%; }
+      body {
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--serif);
+        font-size: 14px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: geometricPrecision;
+        overflow: hidden;
+      }
+
+      /* subtle paper grain */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.08  0 0 0 0 0.07  0 0 0 0.35 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/></svg>");
+        opacity: 0.42;
+        mix-blend-mode: multiply;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      #shell {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        height: 100vh;
+      }
+
+      /* ── header ─────────────────────────── */
+      header {
+        padding: 28px 44px 22px;
+        border-bottom: 1px solid var(--rule-strong);
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: end;
+        gap: 32px;
+        background: var(--paper);
+      }
+      .h-mark {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+      }
+      .h-mark::before {
+        content: '';
+        display: inline-block;
+        width: 22px;
+        height: 1px;
+        background: var(--ink);
+        margin-right: 4px;
+      }
+      .h-title {
+        font-family: var(--serif);
+        font-variation-settings: 'opsz' 96, 'wght' 500;
+        font-size: 44px;
+        line-height: 1;
+        letter-spacing: -0.01em;
+        margin: 8px 0 6px;
+      }
+      .h-sub {
+        font-family: var(--serif);
+        font-style: italic;
+        font-variation-settings: 'opsz' 14, 'wght' 400;
+        font-size: 15px;
+        color: var(--ink-muted);
+        max-width: 56ch;
+      }
+      .h-meta {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+        text-align: right;
+        display: grid;
+        gap: 4px;
+      }
+      .h-meta b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      /* ── main split ─────────────────────────── */
+      main {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        min-height: 0;
+        position: relative;
+      }
+      #stage {
+        position: relative;
+        overflow: hidden;
+        background:
+          linear-gradient(var(--rule) 1px, transparent 1px) 0 0 / 48px 48px,
+          linear-gradient(90deg, var(--rule) 1px, transparent 1px) 0 0 / 48px 48px,
+          var(--paper);
+        background-blend-mode: multiply;
+      }
+      #stage::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(120% 80% at 50% 50%, transparent 55%, rgba(26,22,18,0.10) 100%);
+        pointer-events: none;
+      }
+      #graph { width: 100%; height: 100%; cursor: grab; display: block; }
+      #graph.dragging { cursor: grabbing; }
+
+      /* grid corner marks */
+      .corner {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border: 1px solid var(--ink);
+        opacity: 0.35;
+        pointer-events: none;
+        z-index: 3;
+      }
+      .corner.tl { top: 16px; left: 16px; border-right: none; border-bottom: none; }
+      .corner.tr { top: 16px; right: 16px; border-left: none; border-bottom: none; }
+      .corner.bl { bottom: 16px; left: 16px; border-right: none; border-top: none; }
+      .corner.br { bottom: 16px; right: 16px; border-left: none; border-top: none; }
+
+      .stage-label {
+        position: absolute;
+        bottom: 12px;
+        right: 28px;
+        font-family: var(--mono);
+        font-size: 9.5px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--ink-faded);
+        pointer-events: none;
+        z-index: 3;
+      }
+      .stage-hint {
+        position: absolute;
+        top: 12px;
+        left: 28px;
+        font-family: var(--mono);
+        font-size: 9.5px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--ink-faded);
+        pointer-events: none;
+        z-index: 3;
+      }
+
+      /* ── SVG node + edge styles ─────────────── */
+      .node rect {
+        fill: var(--paper);
+        stroke: var(--ink);
+        stroke-width: 1.25;
+        transition: fill 120ms ease, stroke-width 120ms ease;
+      }
+      .node text {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        font-weight: 500;
+        fill: var(--ink);
+        pointer-events: none;
+        dominant-baseline: middle;
+      }
+      .node:hover rect { fill: var(--paper-shade); }
+      .node.dim { opacity: 0.22; }
+      .node.selected rect { fill: var(--ink); }
+      .node.selected text { fill: var(--paper); }
+      .node[data-toolkit="filesystem"] rect { stroke: var(--c-filesystem); }
+      .node[data-toolkit="fetch"] rect       { stroke: var(--c-fetch); }
+      .node[data-toolkit="github"] rect      { stroke: var(--c-github); }
+
+      .edge path {
+        fill: none;
+        stroke: var(--ink-muted);
+        stroke-width: 0.9;
+        opacity: 0.32;
+        transition: opacity 160ms ease, stroke-width 160ms ease;
+      }
+      .edge.semantic path { stroke: var(--vermilion); stroke-dasharray: 3 3; }
+      .edge.direct path   { stroke: var(--ink); }
+      .edge:hover path,
+      .edge.highlighted path { opacity: 1; stroke-width: 1.5; }
+      .edge.dim path { opacity: 0.07; }
+      .edge.selected path { opacity: 1; stroke-width: 2; }
+
+      .arrow-direct   { fill: var(--ink); }
+      .arrow-semantic { fill: var(--vermilion); }
+
+      /* ── panel ─────────────────────────── */
+      aside {
+        border-left: 1px solid var(--rule-strong);
+        background: var(--paper);
+        padding: 28px 32px 24px;
+        overflow-y: auto;
+        position: relative;
+      }
+      aside::-webkit-scrollbar { width: 6px; }
+      aside::-webkit-scrollbar-thumb { background: var(--rule-strong); border-radius: 3px; }
+
+      .panel-h {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+        margin: 0 0 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--rule);
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .panel-h small {
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 500;
+        color: var(--ink-faded);
+        letter-spacing: 0.18em;
+      }
+      .panel-section + .panel-section { margin-top: 28px; }
+
+      /* legend */
+      .legend-row {
+        display: grid;
+        grid-template-columns: 24px 1fr auto;
+        align-items: center;
+        gap: 12px;
+        padding: 7px 0;
+        font-size: 13px;
+        color: var(--ink);
+        border-bottom: 1px dotted var(--rule);
+      }
+      .legend-row:last-child { border-bottom: none; }
+      .legend-row .sample {
+        height: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+      }
+      .swatch {
+        width: 14px; height: 14px;
+        border: 1.5px solid var(--c-default);
+        background: var(--paper);
+      }
+      .swatch.filesystem { border-color: var(--c-filesystem); }
+      .swatch.fetch      { border-color: var(--c-fetch); }
+      .swatch.github     { border-color: var(--c-github); }
+      .legend-row .label {
+        font-family: var(--mono);
+        font-size: 11.5px;
+        letter-spacing: 0.04em;
+        color: var(--ink);
+      }
+      .legend-row .count {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        color: var(--ink-faded);
+        font-variant-numeric: tabular-nums;
+      }
+      .edge-sample {
+        width: 28px; height: 0;
+        border-top: 1.25px solid var(--ink);
+      }
+      .edge-sample.semantic { border-top: 1.25px dashed var(--vermilion); }
+      .dot-sample {
+        width: 10px; height: 10px; border-radius: 50%;
+        border: 1.25px solid var(--ink);
+        background: transparent;
+      }
+      .dot-sample.user { background: var(--vermilion); border-color: var(--vermilion); }
+
+      /* selection panel */
+      .sel-empty {
+        font-family: var(--serif);
+        font-style: italic;
+        font-size: 14px;
+        color: var(--ink-faded);
+        line-height: 1.6;
+        padding: 8px 0;
+      }
+      .sel-server {
+        display: inline-block;
+        font-family: var(--mono);
+        font-size: 9.5px;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border: 1px solid;
+        margin-bottom: 10px;
+      }
+      .sel-server.filesystem { color: var(--c-filesystem); border-color: var(--c-filesystem); }
+      .sel-server.fetch      { color: var(--c-fetch);      border-color: var(--c-fetch); }
+      .sel-server.github     { color: var(--c-github);     border-color: var(--c-github); }
+      .sel-slug {
+        font-family: var(--mono);
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--ink);
+        word-break: break-word;
+        line-height: 1.25;
+        margin-bottom: 12px;
+      }
+      .sel-desc {
+        font-family: var(--serif);
+        font-size: 13.5px;
+        font-style: italic;
+        font-variation-settings: 'opsz' 14;
+        color: var(--ink-muted);
+        line-height: 1.55;
+      }
+
+      .params {
+        margin-top: 14px;
+        display: grid;
+        gap: 8px;
+      }
+      .param {
+        display: grid;
+        grid-template-columns: 14px 1fr;
+        gap: 10px;
+        padding: 8px 10px;
+        background: var(--paper-shade);
+        border-left: 2px solid var(--rule-strong);
+      }
+      .param.user { border-left-color: var(--vermilion); }
+      .param .dot {
+        margin-top: 4px;
+        width: 8px; height: 8px; border-radius: 50%;
+        border: 1px solid var(--ink);
+        background: transparent;
+      }
+      .param.user .dot { background: var(--vermilion); border-color: var(--vermilion); }
+      .param .pname {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .param .pmeta {
+        font-family: var(--mono);
+        font-size: 9.5px;
+        color: var(--ink-faded);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-top: 2px;
+      }
+      .param .pdesc {
+        font-family: var(--serif);
+        font-size: 12.5px;
+        color: var(--ink-muted);
+        margin-top: 4px;
+        font-style: italic;
+        line-height: 1.45;
+      }
+
+      .edge-list { display: grid; gap: 10px; margin-top: 12px; }
+      .edge-card {
+        padding: 10px 12px;
+        border: 1px solid var(--rule-strong);
+        background: var(--paper-shade);
+      }
+      .edge-card .ec-arrow {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--ink-faded);
+        letter-spacing: 0.1em;
+      }
+      .edge-card .ec-tool {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink);
+        margin: 3px 0;
+        word-break: break-word;
+      }
+      .edge-card .ec-via {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        color: var(--vermilion);
+        font-weight: 500;
+      }
+      .edge-card .ec-reason {
+        font-family: var(--serif);
+        font-style: italic;
+        font-size: 12.5px;
+        color: var(--ink-muted);
+        margin-top: 6px;
+        line-height: 1.45;
+        padding-top: 6px;
+        border-top: 1px dotted var(--rule);
+      }
+      .ec-type {
+        display: inline-block;
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        padding: 2px 6px;
+        margin-bottom: 4px;
+      }
+      .ec-type.direct   { color: var(--ink);       border: 1px solid var(--ink); }
+      .ec-type.semantic { color: var(--vermilion); border: 1px solid var(--vermilion); }
+
+      .placeholder {
+        font-family: var(--serif);
+        font-style: italic;
+        font-size: 12.5px;
+        color: var(--ink-faded);
+        padding: 6px 0;
+      }
+
+      /* ── footer ─────────────────────────── */
+      footer {
+        padding: 10px 44px;
+        border-top: 1px solid var(--rule-strong);
+        font-family: var(--mono);
+        font-size: 9.5px;
+        font-weight: 500;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-faded);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--paper);
+      }
+      footer .servers span + span::before {
+        content: ' · ';
+        margin: 0 4px;
+        opacity: 0.5;
+      }
+      footer .servers .sname { color: var(--ink); }
+
+      /* page-load stagger */
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      header, aside, footer { animation: fadeUp 600ms ease both; }
+      header { animation-delay: 60ms; }
+      aside  { animation-delay: 240ms; }
+      footer { animation-delay: 360ms; }
+      .node, .edge { opacity: 0; animation: fadeIn 480ms ease forwards; }
+      @keyframes fadeIn { to { opacity: 1; } }
     </style>
   </head>
   <body>
-    <p>Redirecting to <a href="./viz/">the Tool Dependency Graph →</a></p>
+    <div id="shell">
+      <header>
+        <div>
+          <div class="h-mark"><span>Atlas of MCP tooling</span></div>
+          <h1 class="h-title">Tool Dependency Graph</h1>
+          <div class="h-sub">
+            A reading of the order in which MCP agent tools may call one another —
+            charted across <b id="srv-count">3</b> servers,
+            edges drawn by name-match heuristic and an LLM reasoner.
+          </div>
+        </div>
+        <div class="h-meta">
+          <div>Compiled <b id="meta-date">2026·05·22</b></div>
+          <div><b id="stat-nodes">0</b> tools indexed</div>
+          <div><b id="stat-edges">0</b> dependencies traced</div>
+          <div><b id="stat-userp">0</b> / <span id="stat-totalp">0</span> params require user input</div>
+        </div>
+      </header>
+
+      <main>
+        <div id="stage">
+          <span class="corner tl"></span>
+          <span class="corner tr"></span>
+          <span class="corner bl"></span>
+          <span class="corner br"></span>
+          <span class="stage-hint">Drag · scroll to zoom · click any node or edge</span>
+          <span class="stage-label">fig. 1 — dependency atlas</span>
+          <svg id="graph" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <marker id="arr-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                <path d="M0,0 L10,5 L0,10 z" class="arrow-direct"/>
+              </marker>
+              <marker id="arr-verm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                <path d="M0,0 L10,5 L0,10 z" class="arrow-semantic"/>
+              </marker>
+            </defs>
+            <g id="viewport">
+              <g id="edges-layer"></g>
+              <g id="nodes-layer"></g>
+            </g>
+          </svg>
+        </div>
+
+        <aside id="panel">
+          <section class="panel-section">
+            <div class="panel-h">Legend <small id="srv-pill-count">three servers</small></div>
+            <div id="legend-servers"></div>
+            <div class="legend-row">
+              <div class="sample"><div class="edge-sample"></div></div>
+              <div class="label">direct edge</div>
+              <div class="count" id="cnt-direct">0</div>
+            </div>
+            <div class="legend-row">
+              <div class="sample"><div class="edge-sample semantic"></div></div>
+              <div class="label">semantic edge</div>
+              <div class="count" id="cnt-semantic">0</div>
+            </div>
+            <div class="legend-row">
+              <div class="sample"><div class="dot-sample"></div></div>
+              <div class="label">derived param</div>
+              <div class="count" id="cnt-derived">0</div>
+            </div>
+            <div class="legend-row">
+              <div class="sample"><div class="dot-sample user"></div></div>
+              <div class="label">user input</div>
+              <div class="count" id="cnt-user">0</div>
+            </div>
+          </section>
+
+          <section class="panel-section">
+            <div class="panel-h">Selection</div>
+            <div id="sel"><div class="sel-empty">Click a node to inspect a tool's required parameters and the producers that may supply them. Click an edge to see why it was inferred.</div></div>
+          </section>
+        </aside>
+      </main>
+
+      <footer>
+        <div class="servers" id="footer-servers"></div>
+        <div>MCP-NATIVE · <span id="footer-date">2026</span> · <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--rule-strong)">modelcontextprotocol.io</a></div>
+      </footer>
+    </div>
+
+    <script>
+      // ── data prep ─────────────────────────────────────
+      const G = window.GRAPH;
+      const nodesById = new Map(G.nodes.map(n => [n.id, n]));
+      const toolkits = [...new Set(G.nodes.map(n => n.toolkit))];
+      const toolkitCounts = Object.fromEntries(toolkits.map(t => [t, G.nodes.filter(n => n.toolkit === t).length]));
+
+      const labelOf = id => id.includes('::') ? id.split('::').slice(1).join('::') : id;
+
+      // ── stats ─────────────────────────────────────────
+      const directCt   = G.edges.filter(e => e.type === 'direct').length;
+      const semanticCt = G.edges.filter(e => e.type === 'semantic').length;
+      const totalP     = G.nodes.reduce((a, n) => a + n.required_params.length, 0);
+      const userP      = G.nodes.reduce((a, n) => a + n.required_params.filter(p => p.user_supplied).length, 0);
+      const derivedP   = totalP - userP;
+
+      document.getElementById('srv-count').textContent  = toolkits.length;
+      document.getElementById('stat-nodes').textContent = G.nodes.length;
+      document.getElementById('stat-edges').textContent = G.edges.length;
+      document.getElementById('stat-userp').textContent = userP;
+      document.getElementById('stat-totalp').textContent = totalP;
+      document.getElementById('cnt-direct').textContent   = directCt;
+      document.getElementById('cnt-semantic').textContent = semanticCt;
+      document.getElementById('cnt-derived').textContent  = derivedP;
+      document.getElementById('cnt-user').textContent     = userP;
+      document.getElementById('meta-date').textContent    = new Date().toISOString().slice(0,10).replace(/-/g, '·');
+      document.getElementById('footer-date').textContent  = new Date().getFullYear();
+
+      const numWords = { 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight' };
+      document.getElementById('srv-pill-count').textContent = `${numWords[toolkits.length] || toolkits.length} servers`;
+
+      const legendEl = document.getElementById('legend-servers');
+      toolkits.sort().forEach(t => {
+        const row = document.createElement('div');
+        row.className = 'legend-row';
+        row.innerHTML = `
+          <div class="sample"><div class="swatch ${t}"></div></div>
+          <div class="label">${t}</div>
+          <div class="count">${toolkitCounts[t]}</div>`;
+        legendEl.appendChild(row);
+      });
+
+      const footerEl = document.getElementById('footer-servers');
+      footerEl.innerHTML = '<span>SERVERS:</span> ' + toolkits.sort().map(t => `<span><span class="sname">${t}</span> · ${toolkitCounts[t]}</span>`).join('');
+
+      // ── dagre layout ──────────────────────────────────
+      const NODE_H = 30;
+      const widthFor = label => Math.max(120, Math.min(240, 28 + label.length * 6.4));
+
+      const dg = new dagre.graphlib.Graph();
+      dg.setGraph({ rankdir: 'LR', nodesep: 22, ranksep: 110, marginx: 50, marginy: 50 });
+      dg.setDefaultEdgeLabel(() => ({}));
+
+      G.nodes.forEach(n => {
+        dg.setNode(n.id, { width: widthFor(labelOf(n.id)), height: NODE_H, _node: n });
+      });
+      G.edges.forEach((e, i) => {
+        dg.setEdge(e.from, e.to, { _edge: e, _idx: i });
+      });
+
+      dagre.layout(dg);
+
+      const layoutBounds = dg.graph();
+      const W = layoutBounds.width;
+      const H = layoutBounds.height;
+
+      // ── render ────────────────────────────────────────
+      const svg = document.getElementById('graph');
+      const viewport = document.getElementById('viewport');
+      const edgesLayer = document.getElementById('edges-layer');
+      const nodesLayer = document.getElementById('nodes-layer');
+
+      // SVG fits content via preserveAspectRatio="xMidYMid meet" once viewBox is set
+      svg.setAttribute('viewBox', `-40 -40 ${W + 80} ${H + 80}`);
+
+      const edgeEls = [];
+      dg.edges().forEach((eid, i) => {
+        const m = dg.edge(eid);
+        const e = m._edge;
+        const points = m.points;
+        const d = pathFromPoints(points);
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', `edge ${e.type}`);
+        g.dataset.idx = m._idx;
+        g.dataset.from = e.from;
+        g.dataset.to = e.to;
+        g.style.animationDelay = `${600 + i * 6}ms`;
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', d);
+        path.setAttribute('marker-end', e.type === 'semantic' ? 'url(#arr-verm)' : 'url(#arr-ink)');
+        g.appendChild(path);
+        edgesLayer.appendChild(g);
+        edgeEls.push({ g, edge: e });
+        g.addEventListener('mouseenter', () => highlightEdge(e, true));
+        g.addEventListener('mouseleave', () => highlightEdge(e, false));
+        g.addEventListener('click', (ev) => { ev.stopPropagation(); selectEdge(e); });
+      });
+
+      const nodeEls = [];
+      dg.nodes().forEach((nid, i) => {
+        const m = dg.node(nid);
+        const n = m._node;
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'node');
+        g.setAttribute('transform', `translate(${m.x - m.width/2}, ${m.y - m.height/2})`);
+        g.dataset.id = n.id;
+        g.dataset.toolkit = n.toolkit;
+        g.style.animationDelay = `${200 + i * 14}ms`;
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('width', m.width);
+        rect.setAttribute('height', m.height);
+        rect.setAttribute('rx', 3);
+        g.appendChild(rect);
+
+        const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        lbl.setAttribute('x', m.width / 2);
+        lbl.setAttribute('y', m.height / 2 + 0.5);
+        lbl.setAttribute('text-anchor', 'middle');
+        lbl.textContent = labelOf(n.id);
+        g.appendChild(lbl);
+
+        nodesLayer.appendChild(g);
+        nodeEls.push({ g, node: n });
+        g.addEventListener('click', (ev) => { ev.stopPropagation(); selectNode(n); });
+      });
+
+      svg.addEventListener('click', () => { clearSelection(); });
+
+      // ── pan & zoom (operates in viewBox space) ────────
+      let scale = 1, tx = 0, ty = 0;
+      function applyTransform() {
+        viewport.setAttribute('transform', `translate(${tx} ${ty}) scale(${scale})`);
+      }
+      function clientToVB(cx, cy) {
+        const pt = svg.createSVGPoint();
+        pt.x = cx; pt.y = cy;
+        const ctm = svg.getScreenCTM();
+        if (!ctm) return { x: 0, y: 0 };
+        const p = pt.matrixTransform(ctm.inverse());
+        return { x: p.x, y: p.y };
+      }
+
+      svg.addEventListener('wheel', (ev) => {
+        ev.preventDefault();
+        const vb = clientToVB(ev.clientX, ev.clientY);
+        const delta = -ev.deltaY * 0.0015;
+        const newScale = Math.max(0.25, Math.min(4, scale * (1 + delta)));
+        // (vb - tx) / scale is the un-transformed point; want it to stay at (vb)
+        tx = vb.x - (vb.x - tx) * (newScale / scale);
+        ty = vb.y - (vb.y - ty) * (newScale / scale);
+        scale = newScale;
+        applyTransform();
+      }, { passive: false });
+
+      let dragging = false, lastVB = null;
+      svg.addEventListener('mousedown', (ev) => {
+        if (ev.target.closest('.node') || ev.target.closest('.edge')) return;
+        dragging = true;
+        lastVB = clientToVB(ev.clientX, ev.clientY);
+        svg.classList.add('dragging');
+      });
+      window.addEventListener('mousemove', (ev) => {
+        if (!dragging) return;
+        const vb = clientToVB(ev.clientX, ev.clientY);
+        tx += vb.x - lastVB.x;
+        ty += vb.y - lastVB.y;
+        lastVB = vb;
+        applyTransform();
+      });
+      window.addEventListener('mouseup', () => {
+        dragging = false;
+        svg.classList.remove('dragging');
+      });
+
+      // ── interactions ──────────────────────────────────
+      function pathFromPoints(pts) {
+        if (!pts || pts.length < 2) return '';
+        let d = `M ${pts[0].x} ${pts[0].y}`;
+        for (let i = 1; i < pts.length - 1; i++) {
+          const mid = { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 };
+          d += ` Q ${pts[i].x} ${pts[i].y} ${mid.x} ${mid.y}`;
+        }
+        const last = pts[pts.length - 1];
+        d += ` L ${last.x} ${last.y}`;
+        return d;
+      }
+
+      function highlightEdge(e, on) {
+        if (selectedId) return;
+        edgeEls.forEach(({ g, edge }) => {
+          g.classList.toggle('highlighted', on && edge === e);
+        });
+      }
+
+      let selectedId = null;
+      function selectNode(n) {
+        selectedId = n.id;
+        const connected = new Set([n.id]);
+        const connEdges = new Set();
+        G.edges.forEach((e, i) => {
+          if (e.from === n.id || e.to === n.id) {
+            connected.add(e.from); connected.add(e.to);
+            connEdges.add(i);
+          }
+        });
+        nodeEls.forEach(({ g, node }) => {
+          g.classList.toggle('selected', node.id === n.id);
+          g.classList.toggle('dim', !connected.has(node.id));
+        });
+        edgeEls.forEach(({ g }, i) => {
+          g.classList.toggle('highlighted', connEdges.has(i));
+          g.classList.toggle('dim', !connEdges.has(i));
+        });
+        renderNodeDetail(n);
+      }
+
+      function selectEdge(e) {
+        selectedId = `edge:${e.from}-${e.to}-${e.consumes}`;
+        const idx = G.edges.indexOf(e);
+        const lit = new Set([e.from, e.to]);
+        nodeEls.forEach(({ g, node }) => {
+          g.classList.toggle('selected', node.id === e.from || node.id === e.to);
+          g.classList.toggle('dim', !lit.has(node.id));
+        });
+        edgeEls.forEach(({ g }, i) => {
+          g.classList.toggle('selected', i === idx);
+          g.classList.toggle('dim', i !== idx);
+        });
+        renderEdgeDetail(e);
+      }
+
+      function clearSelection() {
+        selectedId = null;
+        nodeEls.forEach(({ g }) => { g.classList.remove('selected', 'dim'); });
+        edgeEls.forEach(({ g }) => { g.classList.remove('selected', 'dim', 'highlighted'); });
+        document.getElementById('sel').innerHTML = `
+          <div class="sel-empty">Click a node to inspect a tool's required parameters and the producers that may supply them. Click an edge to see why it was inferred.</div>`;
+      }
+
+      function escapeHTML(s) {
+        return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      }
+
+      function renderNodeDetail(n) {
+        const inEdges  = G.edges.filter(e => e.to === n.id);
+        const outEdges = G.edges.filter(e => e.from === n.id);
+
+        const paramsHtml = n.required_params.length
+          ? `<div class="params">${n.required_params.map(p => `
+              <div class="param ${p.user_supplied ? 'user' : ''}">
+                <div class="dot"></div>
+                <div>
+                  <div class="pname">${escapeHTML(p.name)}</div>
+                  <div class="pmeta">${escapeHTML(p.type || '—')} · ${p.user_supplied ? 'user input' : 'derived'}</div>
+                  ${p.description ? `<div class="pdesc">${escapeHTML(p.description)}</div>` : ''}
+                </div>
+              </div>`).join('')}</div>`
+          : '<div class="placeholder">no required params</div>';
+
+        const inHtml = inEdges.length
+          ? `<div class="edge-list">${inEdges.map(e => `
+              <div class="edge-card">
+                <div class="ec-type ${e.type}">${e.type}</div>
+                <div class="ec-arrow">FROM</div>
+                <div class="ec-tool">${escapeHTML(e.from)}</div>
+                <div class="ec-via">→ supplies ${escapeHTML(e.consumes)}</div>
+                ${e.reason ? `<div class="ec-reason">${escapeHTML(e.reason)}</div>` : ''}
+              </div>`).join('')}</div>`
+          : '<div class="placeholder">no producers in catalog — all params are user input</div>';
+
+        const outHtml = outEdges.length
+          ? `<div class="edge-list">${outEdges.slice(0, 8).map(e => `
+              <div class="edge-card">
+                <div class="ec-type ${e.type}">${e.type}</div>
+                <div class="ec-arrow">FEEDS</div>
+                <div class="ec-tool">${escapeHTML(e.to)}</div>
+                <div class="ec-via">→ as ${escapeHTML(e.consumes)}</div>
+              </div>`).join('')}${outEdges.length > 8 ? `<div class="placeholder">+${outEdges.length - 8} more consumer${outEdges.length - 8 === 1 ? '' : 's'}</div>` : ''}</div>`
+          : '<div class="placeholder">no downstream consumers traced</div>';
+
+        document.getElementById('sel').innerHTML = `
+          <div class="sel-server ${n.toolkit}">${n.toolkit}</div>
+          <div class="sel-slug">${escapeHTML(n.id)}</div>
+          <div class="sel-desc">${escapeHTML(n.description || '—')}</div>
+
+          <div class="panel-h" style="margin-top:22px">Required params <small>${n.required_params.length}</small></div>
+          ${paramsHtml}
+
+          <div class="panel-h" style="margin-top:22px">Producers <small>${inEdges.length}</small></div>
+          ${inHtml}
+
+          <div class="panel-h" style="margin-top:22px">Consumers <small>${outEdges.length}</small></div>
+          ${outHtml}`;
+      }
+
+      function renderEdgeDetail(e) {
+        const fromNode = nodesById.get(e.from);
+        const toNode   = nodesById.get(e.to);
+        document.getElementById('sel').innerHTML = `
+          <div class="ec-type ${e.type}" style="margin-bottom:14px">${e.type} edge</div>
+          <div style="padding:0">
+            <div class="ec-arrow" style="font-family:var(--mono);font-size:10px;color:var(--ink-faded);letter-spacing:0.1em">PRODUCER</div>
+            <div class="sel-server ${fromNode?.toolkit}" style="margin: 6px 0 4px">${escapeHTML(fromNode?.toolkit || '')}</div>
+            <div class="ec-tool" style="font-family:var(--mono);font-weight:600;font-size:14px">${escapeHTML(e.from)}</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--ink-faded);letter-spacing:0.1em;margin:14px 0">↓ supplies <b style="color:var(--vermilion)">${escapeHTML(e.consumes)}</b></div>
+            <div class="ec-arrow" style="font-family:var(--mono);font-size:10px;color:var(--ink-faded);letter-spacing:0.1em">CONSUMER</div>
+            <div class="sel-server ${toNode?.toolkit}" style="margin: 6px 0 4px">${escapeHTML(toNode?.toolkit || '')}</div>
+            <div class="ec-tool" style="font-family:var(--mono);font-weight:600;font-size:14px">${escapeHTML(e.to)}</div>
+            ${e.reason ? `<div class="ec-reason" style="font-family:var(--serif);font-style:italic;font-size:13px;color:var(--ink-muted);line-height:1.5;margin-top:18px;padding-top:14px;border-top:1px dotted var(--rule)">${escapeHTML(e.reason)}</div>` : ''}
+            ${e.confidence ? `<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-faded);margin-top:14px">CONFIDENCE · <b style="color:var(--ink)">${escapeHTML(e.confidence)}</b></div>` : ''}
+          </div>`;
+      }
+    </script>
   </body>
 </html>
