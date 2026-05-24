@@ -153,10 +153,12 @@ Missing or empty → all tools from each server are included. Keys are server na
 - The slug-noun heuristic (`<noun>_id` → look for producer tools containing `<noun>`) is largely inert for MCP's snake_case tool names. Composio-style `SCREAMING_SNAKE` toolkits yield more direct edges. Most MCP edges land via the semantic LLM pass — see [APPROACH.md](APPROACH.md) for design rationale.
 - LLM provider precedence: `ANTHROPIC_API_KEY` > `OPENAI_API_KEY` > `GOOGLE_API_KEY` > `OPENROUTER_API_KEY`. Override with `LLM_PROVIDER=<provider>` and/or `LLM_MODEL=<model>`.
 - Semantic pass caches per-consumer in `data/cache/semantic/<slug>.json`. Re-runs are cheap; partial failures survive.
-- The viz is fully static — no server required, no build step. Open `viz/index.html` directly via `file://` or any static host.
+- The viz is fully static — no server required, no build step. Open `index.html` directly via `file://` or any static host.
 
 ## References
 
-- Source: <https://github.com/NodeOps-app/skills> (parent CLI: `npx skills add`)
-- Design: [APPROACH.md](APPROACH.md), [docs/superpowers/specs/2026-05-17-tool-dependency-graph-design.md](docs/superpowers/specs/2026-05-17-tool-dependency-graph-design.md)
+- This repo: <https://github.com/adityachaudhary99/mcp-tool-deps>
+- Live demo: <https://production-mcp-tool-deps.tyzo.nodeops.app>
+- Skills CLI: <https://github.com/NodeOps-app/skills> (`npx skills add ...`)
+- Design rationale: [APPROACH.md](APPROACH.md)
 - MCP spec: <https://modelcontextprotocol.io>

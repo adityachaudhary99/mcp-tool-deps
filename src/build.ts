@@ -14,4 +14,4 @@ for (const stage of STAGES) {
     process.exit(r.status ?? 1);
   }
 }
-console.log("\nbuild complete. open viz/index.html");
+console.log("\nbuild complete. open index.html");

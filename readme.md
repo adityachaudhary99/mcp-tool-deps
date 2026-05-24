@@ -24,8 +24,14 @@ The cross-server headline: `fetch::fetch → filesystem::write_file [content]` �
 This repo is packaged as a [CreateOS Skill](https://nodeops.network/createos/skills). With the [`skills` CLI](https://github.com/NodeOps-app/skills), any AI coding agent can install and run the pipeline:
 
 ```bash
+# Install from this repo:
+npx skills add https://github.com/adityachaudhary99/mcp-tool-deps --skill mcp-tool-deps
+
+# Or from your own fork:
 npx skills add https://github.com/<your-fork>/mcp-tool-deps --skill mcp-tool-deps
 ```
+
+**Live atlas:** [production-mcp-tool-deps.tyzo.nodeops.app](https://production-mcp-tool-deps.tyzo.nodeops.app/) — the demo dataset (filesystem + fetch + github), hosted on CreateOS.
 
 See [SKILL.md](SKILL.md) for the manifest that AI agents read.
 
