@@ -954,15 +954,23 @@
       const widthFor = (label, mult) => Math.max(110, Math.min(260, (28 + label.length * 6.4) * mult));
 
       const dg = new dagre.graphlib.Graph({ compound: true });
-      dg.setGraph({ rankdir: 'LR', nodesep: 26, ranksep: 110, marginx: 50, marginy: 50 });
+      dg.setGraph({ rankdir: 'LR', nodesep: 36, ranksep: 140, marginx: 50, marginy: 50 });
       dg.setDefaultEdgeLabel(() => ({}));
 
       // Create cluster (region) nodes first, then attach members.
+      // paddingX/Y give dagre room to draw the cluster rect around the children;
+      // we draw our own labelled rect on top, so this just buys visual breathing room
+      // between adjacent districts.
       const activeRegions = new Set();
       G.nodes.forEach(n => activeRegions.add(regionOf(n.id)));
       activeRegions.forEach(rk => {
         if (rk === 'other') return;
-        dg.setNode('region:' + rk, { label: regionByKey.get(rk)?.label || rk, clusterLabelPos: 'top' });
+        dg.setNode('region:' + rk, {
+          label: regionByKey.get(rk)?.label || rk,
+          clusterLabelPos: 'top',
+          paddingX: 24,
+          paddingY: 28,
+        });
       });
 
       G.nodes.forEach(n => {
@@ -998,7 +1006,6 @@
       const INITIAL_SCALE = 1.4;
 
       // ── REGION boxes + editorial labels ───────────────
-      const REGION_LABEL_OFFSET = 10;  // px above region rect
       activeRegions.forEach(rk => {
         if (rk === 'other') return;
         const r = dg.node('region:' + rk);
@@ -1022,19 +1029,24 @@
         rect.setAttribute('rx', 4);
         g.appendChild(rect);
 
-        const numT = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        numT.setAttribute('x', x + 12);
-        numT.setAttribute('y', y + 16);
-        numT.setAttribute('class', 'region-num');
-        numT.textContent = '§ ' + meta.num;
-        g.appendChild(numT);
+        // Header: one <text> with two <tspan>s so the label always sits
+        // a fixed gap after the (variable-width) numeral instead of at a
+        // hardcoded x — fixes "§ VIII" + "REPO" running together.
+        const header = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        header.setAttribute('x', x + 14);
+        header.setAttribute('y', y + 18);
 
-        const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        lbl.setAttribute('x', x + 36);
-        lbl.setAttribute('y', y + 16);
-        lbl.textContent = meta.label;
-        g.appendChild(lbl);
+        const numTspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+        numTspan.setAttribute('class', 'region-num');
+        numTspan.textContent = '§ ' + meta.num;
+        header.appendChild(numTspan);
 
+        const lblTspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+        lblTspan.setAttribute('dx', '14');
+        lblTspan.textContent = meta.label;
+        header.appendChild(lblTspan);
+
+        g.appendChild(header);
         regionsLayer.appendChild(g);
       });
 
