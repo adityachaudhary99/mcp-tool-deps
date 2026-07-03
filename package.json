@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "fetch": "bun src/fetch.ts",
-    "build": "bun src/build.ts",
+    "build": "bun build analytics.js --outfile=analytics.bundle.js --target=browser && bun src/build.ts",
     "serve": "bun src/serve.ts",
-    "skill": "bun src/fetch.ts && bun src/build.ts"
+    "skill": "bun src/fetch.ts && bun build analytics.js --outfile=analytics.bundle.js --target=browser && bun src/build.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@vercel/analytics": "^2.0.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
